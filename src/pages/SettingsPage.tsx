@@ -1,0 +1,424 @@
+import React, { useState } from 'react';
+import { useSettingsStore } from '../store/settingsStore';
+import { useKeyboardStore } from '../store/keyboardStore';
+import { useMidiStore } from '../store/midiStore';
+import { useTouchVelocity } from '../hooks/useTouchVelocity';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, Check, Smartphone, MousePointer, Zap, Sliders } from 'lucide-react';
+
+export default function SettingsPage() {
+  const settings = useSettingsStore();
+  const updateSetting = useSettingsStore((state) => state.updateSetting);
+  const { setNumOctaves } = useKeyboardStore();
+  const { deviceCapabilities } = useMidiStore();
+  const { calculateVelocity } = useTouchVelocity();
+
+  const [testVelocities, setTestVelocities] = useState<{v: number, type: string}[]>([]);
+
+  const handleTestPress = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    
+    const velocity = calculateVelocity(e.nativeEvent);
+    
+    let type = 'Speed';
+    if (e.pointerType === 'touch') {
+      if (e.pressure > 0 && e.pressure !== 0.5) type = 'Pressure';
+      else if (e.width > 1 || e.height > 1) type = 'Area';
+    }
+
+    setTestVelocities(prev => [{v: velocity, type}, ...prev].slice(0, 4));
+  };
+
+  const presets = {
+    soft: { curve: 0.5, min: 0.01, max: 0.8 },
+    normal: { curve: 0.65, min: 0.02, max: 1.2 },
+    hard: { curve: 0.85, min: 0.05, max: 1.8 },
+  };
+
+  const applyPreset = (name: 'soft' | 'normal' | 'hard') => {
+    const p = presets[name];
+    updateSetting('velocityPreset', name);
+    updateSetting('velocitySensitivity', p.curve);
+    updateSetting('minSpeed', p.min);
+    updateSetting('maxSpeed', p.max);
+  };
+
+  const accentColors = [
+    { name: 'Teal', value: '#1D9E75' },
+    { name: 'Amber', value: '#EF9F27' },
+    { name: 'Blue', value: '#378ADD' },
+    { name: 'Coral', value: '#D85A30' },
+    { name: 'Purple', value: '#7F77DD' },
+  ];
+
+  return (
+    <div className="p-6 max-w-2xl mx-auto h-full overflow-y-auto no-scrollbar pb-24">
+      <div className="flex items-center gap-4 mb-8">
+        <Link to="/" className="p-2 hover:bg-[#242424] rounded-full transition-colors">
+          <ArrowLeft size={20} />
+        </Link>
+        <h1 className="text-2xl font-bold">Settings</h1>
+      </div>
+      
+      <div className="space-y-10">
+        {/* KEYBOARD */}
+        <section>
+          <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#888] font-bold mb-4">Keyboard</h2>
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">Number of Octaves</div>
+                <div className="text-xs text-[#888]">Visible keyboard range</div>
+              </div>
+              <div className="flex bg-[#242424] p-1 rounded-lg border border-[#2e2e2e]">
+                {[2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => {
+                      updateSetting('numOctaves', n);
+                      setNumOctaves(n);
+                    }}
+                    className={`px-4 py-1.5 text-xs font-bold rounded transition-all ${settings.numOctaves === n ? 'bg-[#1D9E75] text-white shadow-lg' : 'text-[#888] hover:text-[#f0f0f0]'}`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">Key Width</div>
+                <div className="text-xs text-[#888]">Size of individual keys</div>
+              </div>
+              <div className="flex bg-[#242424] p-1 rounded-lg border border-[#2e2e2e]">
+                {['narrow', 'normal', 'wide'].map((w) => (
+                  <button
+                    key={w}
+                    onClick={() => {
+                      updateSetting('keyWidth', w as any);
+                      const width = w === 'narrow' ? '36px' : w === 'normal' ? '48px' : '60px';
+                      document.documentElement.style.setProperty('--white-key-width', width);
+                    }}
+                    className={`px-3 py-1.5 text-xs font-bold capitalize rounded transition-all ${settings.keyWidth === w ? 'bg-[#1D9E75] text-white shadow-lg' : 'text-[#888] hover:text-[#f0f0f0]'}`}
+                  >
+                    {w}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">Show Note Labels</div>
+                <div className="text-xs text-[#888]">Display note names on keys</div>
+              </div>
+              <button 
+                onClick={() => updateSetting('showNoteLabels', !settings.showNoteLabels)}
+                className={`w-10 h-5 rounded-full relative transition-colors ${settings.showNoteLabels ? 'bg-[#1D9E75]' : 'bg-[#2e2e2e]'}`}
+              >
+                <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${settings.showNoteLabels ? 'left-6' : 'left-1'}`} />
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* VELOCITY */}
+        <section>
+          <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#888] font-bold mb-4">Velocity Engine</h2>
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-6 space-y-8">
+            
+            {/* Presets */}
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">Response Preset</div>
+                <div className="text-xs text-[#888]">Pre-calibrated sensitivity</div>
+              </div>
+              <div className="flex bg-[#242424] p-1 rounded-lg border border-[#2e2e2e]">
+                {['soft', 'normal', 'hard'].map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => applyPreset(p as any)}
+                    className={`px-3 py-1.5 text-xs font-bold capitalize rounded transition-all ${settings.velocityPreset === p ? 'bg-[#1D9E75] text-white shadow-lg' : 'text-[#888] hover:text-[#f0f0f0]'}`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Advanced Calibration */}
+            <div className="space-y-6 pt-4 border-t border-[#2e2e2e]">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-[#888] uppercase tracking-widest">
+                <Sliders size={12} />
+                Advanced Calibration
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between text-xs font-medium">
+                  <span className="text-[#888]">Sensitivity (Curve)</span>
+                  <span>{settings.velocitySensitivity.toFixed(2)}</span>
+                </div>
+                <input 
+                  type="range" min="0.3" max="2.0" step="0.05" value={settings.velocitySensitivity}
+                  onChange={(e) => {
+                    updateSetting('velocitySensitivity', parseFloat(e.target.value));
+                    updateSetting('velocityPreset', 'custom');
+                  }}
+                  className="w-full h-1.5 bg-[#242424] rounded-lg appearance-none cursor-pointer accent-[#1D9E75]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-[#888]">Min Speed</span>
+                    <span>{settings.minSpeed.toFixed(2)}</span>
+                  </div>
+                  <input 
+                    type="range" min="0.01" max="0.2" step="0.01" value={settings.minSpeed}
+                    onChange={(e) => {
+                      updateSetting('minSpeed', parseFloat(e.target.value));
+                      updateSetting('velocityPreset', 'custom');
+                    }}
+                    className="w-full h-1.5 bg-[#242424] rounded-lg appearance-none cursor-pointer accent-[#1D9E75]"
+                  />
+                </div>
+                <div className="space-y-4">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-[#888]">Max Speed</span>
+                    <span>{settings.maxSpeed.toFixed(1)}</span>
+                  </div>
+                  <input 
+                    type="range" min="0.5" max="3.0" step="0.1" value={settings.maxSpeed}
+                    onChange={(e) => {
+                      updateSetting('maxSpeed', parseFloat(e.target.value));
+                      updateSetting('velocityPreset', 'custom');
+                    }}
+                    className="w-full h-1.5 bg-[#242424] rounded-lg appearance-none cursor-pointer accent-[#1D9E75]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-[#888]">Min Vel</span>
+                    <span>{settings.minVelocity}</span>
+                  </div>
+                  <input 
+                    type="range" min="1" max="64" value={settings.minVelocity}
+                    onChange={(e) => updateSetting('minVelocity', parseInt(e.target.value))}
+                    className="w-full h-1.5 bg-[#242424] rounded-lg appearance-none cursor-pointer accent-[#1D9E75]"
+                  />
+                </div>
+                <div className="space-y-4">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-[#888]">Max Vel</span>
+                    <span>{settings.maxVelocity}</span>
+                  </div>
+                  <input 
+                    type="range" min="64" max="127" value={settings.maxVelocity}
+                    onChange={(e) => updateSetting('maxVelocity', parseInt(e.target.value))}
+                    className="w-full h-1.5 bg-[#242424] rounded-lg appearance-none cursor-pointer accent-[#1D9E75]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Device Info */}
+            <div className="pt-6 border-t border-[#2e2e2e]">
+              <div className="text-[10px] font-bold text-[#888] uppercase tracking-widest mb-4">Hardware Capabilities</div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className={`flex flex-col items-center gap-2 p-3 rounded-lg border ${deviceCapabilities.touchInput ? 'bg-[#1D9E75]/10 border-[#1D9E75]/30 text-[#1D9E75]' : 'bg-[#242424] border-[#2e2e2e] text-[#444]'}`}>
+                  <Smartphone size={16} />
+                  <span className="text-[9px] font-bold uppercase">Touch</span>
+                </div>
+                <div className={`flex flex-col items-center gap-2 p-3 rounded-lg border ${deviceCapabilities.pressure ? 'bg-[#1D9E75]/10 border-[#1D9E75]/30 text-[#1D9E75]' : 'bg-[#242424] border-[#2e2e2e] text-[#444]'}`}>
+                  <Zap size={16} />
+                  <span className="text-[9px] font-bold uppercase">Pressure</span>
+                </div>
+                <div className={`flex flex-col items-center gap-2 p-3 rounded-lg border ${deviceCapabilities.contactArea ? 'bg-[#1D9E75]/10 border-[#1D9E75]/30 text-[#1D9E75]' : 'bg-[#242424] border-[#2e2e2e] text-[#444]'}`}>
+                  <MousePointer size={16} />
+                  <span className="text-[9px] font-bold uppercase">Area</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Test Section */}
+            <div className="pt-6 border-t border-[#2e2e2e]">
+              <div className="text-[10px] font-bold text-[#888] uppercase tracking-widest mb-4">Test Velocity</div>
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                {[1, 2, 3, 4].map(id => (
+                  <div
+                    key={id}
+                    className="aspect-square bg-[#242424] border border-[#2e2e2e] rounded-xl flex items-center justify-center active:bg-[#1D9E75]/20 active:border-[#1D9E75] transition-colors cursor-pointer touch-none"
+                    onPointerDown={handleTestPress}
+                  >
+                    <div className="w-2 h-2 rounded-full bg-[#333]" />
+                  </div>
+                ))}
+              </div>
+              
+              <div className="space-y-2">
+                {testVelocities.length === 0 ? (
+                  <div className="text-center py-4 text-xs text-[#444] italic">Tap the pads above to test</div>
+                ) : (
+                  testVelocities.map((test, i) => (
+                    <div key={i} className="flex items-center justify-between bg-[#242424] px-4 py-2 rounded-lg border border-[#2e2e2e] animate-in fade-in slide-in-from-top-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#1D9E75]" />
+                        <span className="text-xs font-mono font-bold">Velocity: {test.v}</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-[#888] uppercase tracking-widest">via {test.type}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* MIDI */}
+        <section>
+          <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#888] font-bold mb-4">MIDI</h2>
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">MIDI Channel</div>
+                <div className="text-xs text-[#888]">Channel for outgoing messages</div>
+              </div>
+              <select 
+                value={settings.midiChannel}
+                onChange={(e) => updateSetting('midiChannel', parseInt(e.target.value))}
+                className="bg-[#242424] border border-[#2e2e2e] rounded-lg px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-[#1D9E75]"
+              >
+                {Array.from({ length: 16 }, (_, i) => i + 1).map(ch => (
+                  <option key={ch} value={ch}>Channel {ch}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">Transpose</div>
+                <div className="text-xs text-[#888]">Shift pitch in semitones</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => updateSetting('transpose', Math.max(-12, settings.transpose - 1))}
+                  className="w-8 h-8 bg-[#242424] border border-[#2e2e2e] rounded-lg flex items-center justify-center text-sm font-bold hover:bg-[#2e2e2e]"
+                >
+                  -
+                </button>
+                <span className="text-sm font-mono font-bold w-8 text-center">{settings.transpose > 0 ? `+${settings.transpose}` : settings.transpose}</span>
+                <button 
+                  onClick={() => updateSetting('transpose', Math.min(12, settings.transpose + 1))}
+                  className="w-8 h-8 bg-[#242424] border border-[#2e2e2e] rounded-lg flex items-center justify-center text-sm font-bold hover:bg-[#2e2e2e]"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* AUDIO */}
+        <section>
+          <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#888] font-bold mb-4">Audio</h2>
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">Internal Audio</div>
+                <div className="text-xs text-[#888]">Enable built-in piano sounds</div>
+              </div>
+              <button 
+                onClick={() => updateSetting('audioEnabled', !settings.audioEnabled)}
+                className={`w-10 h-5 rounded-full relative transition-colors ${settings.audioEnabled ? 'bg-[#1D9E75]' : 'bg-[#2e2e2e]'}`}
+              >
+                <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${settings.audioEnabled ? 'left-6' : 'left-1'}`} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex justify-between text-xs font-medium">
+                <span className="text-[#888]">Volume</span>
+                <span>{settings.volume}%</span>
+              </div>
+              <input 
+                type="range" min="0" max="100" value={settings.volume}
+                onChange={(e) => updateSetting('volume', parseInt(e.target.value))}
+                className="w-full h-1.5 bg-[#242424] rounded-lg appearance-none cursor-pointer accent-[#1D9E75]"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">Sample Set</div>
+                <div className="text-xs text-[#888]">Sound engine preset</div>
+              </div>
+              <div className="flex bg-[#242424] p-1 rounded-lg border border-[#2e2e2e]">
+                {['piano', 'synth'].map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => updateSetting('sampleSet', s as any)}
+                    className={`px-4 py-1.5 text-xs font-bold capitalize rounded transition-all ${settings.sampleSet === s ? 'bg-[#1D9E75] text-white shadow-lg' : 'text-[#888] hover:text-[#f0f0f0]'}`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* APPEARANCE */}
+        <section>
+          <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#888] font-bold mb-4">Appearance</h2>
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">Accent Color</div>
+                <div className="text-xs text-[#888]">Primary theme color</div>
+              </div>
+              <div className="flex gap-2">
+                {accentColors.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => {
+                      updateSetting('accentColor', color.value);
+                      document.documentElement.style.setProperty('--accent', color.value);
+                      document.documentElement.style.setProperty('--white-key-pressed', color.value);
+                    }}
+                    className="w-6 h-6 rounded-full border border-[#2e2e2e] flex items-center justify-center transition-transform active:scale-90"
+                    style={{ backgroundColor: color.value }}
+                  >
+                    {settings.accentColor === color.value && <Check size={12} className="text-white" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* SYSTEM */}
+        <section>
+          <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#888] font-bold mb-4">System</h2>
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] overflow-hidden">
+            <Link 
+              to="/about" 
+              className="flex items-center justify-between p-6 hover:bg-[#242424] transition-colors"
+            >
+              <div>
+                <div className="text-sm font-medium">About StudioPro</div>
+                <div className="text-xs text-[#888]">Version, shortcuts, and info</div>
+              </div>
+              <ArrowLeft size={16} className="text-[#888] rotate-180" />
+            </Link>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}

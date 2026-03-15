@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  --color-accent: #1D9E75;
+  --color-accent-amber: #EF9F27;
+  --color-accent-red: #E24B4A;
+}
+
+:root {
+  --white-key-width: 48px;
+  --black-key-width: 28px;
+  --black-key-height: 60%;
+  
+  --white-key-bg: #F5F5F0;
+  --white-key-pressed: #1D9E75;
+  --white-key-border: #C8C8C0;
+  
+  --black-key-bg: #1a1a1a;
+  --black-key-pressed: #2a7a5a;
+  
+  --velocity-color: #EF9F27;
+  --accent: #1D9E75;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --white-key-width: 36px;
+    --black-key-width: 22px;
+  }
+}
+
+body {
+  @apply bg-[#0f0f0f] text-[#f0f0f0] overflow-hidden select-none;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Styled Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { 
+  background: #333; 
+  border-radius: 2px; 
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+/* Prevent default touch actions on the keyboard */
+.piano-key {
+  touch-action: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
