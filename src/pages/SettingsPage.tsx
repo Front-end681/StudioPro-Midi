@@ -3,8 +3,13 @@ import { useSettingsStore } from '../store/settingsStore';
 import { useKeyboardStore } from '../store/keyboardStore';
 import { useMidiStore } from '../store/midiStore';
 import { useTouchVelocity } from '../hooks/useTouchVelocity';
+import { useResponsive } from '../hooks/useResponsive';
+import ConnectionSection from '../components/settings/ConnectionSection';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Check, Smartphone, MousePointer, Zap, Sliders } from 'lucide-react';
+import { ArrowLeft, Check, Smartphone, MousePointer, Zap, Sliders, RefreshCw } from 'lucide-react';
+
+import { FreqCurveDisplay } from '../components/controls/FreqCurveDisplay';
+import { getFreqFactor } from '../utils/frequencyWeight';
 
 export default function SettingsPage() {
   const settings = useSettingsStore();
@@ -12,14 +17,24 @@ export default function SettingsPage() {
   const { setNumOctaves } = useKeyboardStore();
   const { deviceCapabilities } = useMidiStore();
   const { calculateVelocity } = useTouchVelocity();
+  const { isMobile, isPortrait } = useResponsive();
 
-  const [testVelocities, setTestVelocities] = useState<{v: number, type: string}[]>([]);
+  const [testVelocities, setTestVelocities] = useState<{v: number, raw: number, note: number, type: string}[]>([]);
 
-  const handleTestPress = (e: React.PointerEvent) => {
+  const handleTestPress = (e: React.PointerEvent, note: number) => {
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     
-    const velocity = calculateVelocity(e.nativeEvent);
+    // We need a dummy element for calculateVelocity
+    const dummyElement = e.currentTarget as HTMLElement;
+    const finalVelocity = calculateVelocity(e.nativeEvent, dummyElement, note);
+    
+    // To get raw velocity, we'd need to re-run parts of the engine or modify it.
+    // For the UI display, let's calculate raw by reversing the freq compensation
+    const factor = getFreqFactor(note);
+    const amount = settings.freqCompensationEnabled ? settings.freqCompensationAmount : 0;
+    const blended = 1.0 + (factor - 1.0) * amount;
+    const rawVelocity = Math.round(finalVelocity / blended);
     
     let type = 'Speed';
     if (e.pointerType === 'touch') {
@@ -27,7 +42,7 @@ export default function SettingsPage() {
       else if (e.width > 1 || e.height > 1) type = 'Area';
     }
 
-    setTestVelocities(prev => [{v: velocity, type}, ...prev].slice(0, 4));
+    setTestVelocities(prev => [{v: finalVelocity, raw: rawVelocity, note, type}, ...prev].slice(0, 4));
   };
 
   const presets = {
@@ -52,21 +67,24 @@ export default function SettingsPage() {
     { name: 'Purple', value: '#7F77DD' },
   ];
 
+  const containerPadding = isMobile ? 'p-4' : 'p-6';
+  const sectionSpacing = isMobile ? 'space-y-6' : 'space-y-10';
+
   return (
-    <div className="p-6 max-w-2xl mx-auto h-full overflow-y-auto no-scrollbar pb-24">
-      <div className="flex items-center gap-4 mb-8">
+    <div className={`${containerPadding} max-w-2xl mx-auto h-full overflow-y-auto no-scrollbar pb-24`}>
+      <div className="flex items-center gap-4 mb-6 sm:mb-8">
         <Link to="/" className="p-2 hover:bg-[#242424] rounded-full transition-colors">
           <ArrowLeft size={20} />
         </Link>
-        <h1 className="text-2xl font-bold">Settings</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">Settings</h1>
       </div>
       
-      <div className="space-y-10">
+      <div className={sectionSpacing}>
         {/* KEYBOARD */}
         <section>
           <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#888] font-bold mb-4">Keyboard</h2>
-          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-6 space-y-6">
-            <div className="flex items-center justify-between">
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-4 sm:p-6 space-y-6">
+            <div className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center justify-between'}`}>
               <div>
                 <div className="text-sm font-medium">Number of Octaves</div>
                 <div className="text-xs text-[#888]">Visible keyboard range</div>
@@ -79,7 +97,7 @@ export default function SettingsPage() {
                       updateSetting('numOctaves', n);
                       setNumOctaves(n);
                     }}
-                    className={`px-4 py-1.5 text-xs font-bold rounded transition-all ${settings.numOctaves === n ? 'bg-[#1D9E75] text-white shadow-lg' : 'text-[#888] hover:text-[#f0f0f0]'}`}
+                    className={`flex-1 sm:px-4 py-1.5 text-xs font-bold rounded transition-all ${settings.numOctaves === n ? 'bg-[#1D9E75] text-white shadow-lg' : 'text-[#888] hover:text-[#f0f0f0]'}`}
                   >
                     {n}
                   </button>
@@ -87,7 +105,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center justify-between'}`}>
               <div>
                 <div className="text-sm font-medium">Key Width</div>
                 <div className="text-xs text-[#888]">Size of individual keys</div>
@@ -101,7 +119,7 @@ export default function SettingsPage() {
                       const width = w === 'narrow' ? '36px' : w === 'normal' ? '48px' : '60px';
                       document.documentElement.style.setProperty('--white-key-width', width);
                     }}
-                    className={`px-3 py-1.5 text-xs font-bold capitalize rounded transition-all ${settings.keyWidth === w ? 'bg-[#1D9E75] text-white shadow-lg' : 'text-[#888] hover:text-[#f0f0f0]'}`}
+                    className={`flex-1 sm:px-3 py-1.5 text-xs font-bold capitalize rounded transition-all ${settings.keyWidth === w ? 'bg-[#1D9E75] text-white shadow-lg' : 'text-[#888] hover:text-[#f0f0f0]'}`}
                   >
                     {w}
                   </button>
@@ -127,10 +145,10 @@ export default function SettingsPage() {
         {/* VELOCITY */}
         <section>
           <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#888] font-bold mb-4">Velocity Engine</h2>
-          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-6 space-y-8">
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-4 sm:p-6 space-y-8">
             
             {/* Presets */}
-            <div className="flex items-center justify-between">
+            <div className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center justify-between'}`}>
               <div>
                 <div className="text-sm font-medium">Response Preset</div>
                 <div className="text-xs text-[#888]">Pre-calibrated sensitivity</div>
@@ -140,7 +158,7 @@ export default function SettingsPage() {
                   <button
                     key={p}
                     onClick={() => applyPreset(p as any)}
-                    className={`px-3 py-1.5 text-xs font-bold capitalize rounded transition-all ${settings.velocityPreset === p ? 'bg-[#1D9E75] text-white shadow-lg' : 'text-[#888] hover:text-[#f0f0f0]'}`}
+                    className={`flex-1 sm:px-3 py-1.5 text-xs font-bold capitalize rounded transition-all ${settings.velocityPreset === p ? 'bg-[#1D9E75] text-white shadow-lg' : 'text-[#888] hover:text-[#f0f0f0]'}`}
                   >
                     {p}
                   </button>
@@ -170,7 +188,7 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
+              <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-2 gap-6'}`}>
                 <div className="space-y-4">
                   <div className="flex justify-between text-xs font-medium">
                     <span className="text-[#888]">Min Speed</span>
@@ -201,7 +219,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
+              <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-2 gap-6'}`}>
                 <div className="space-y-4">
                   <div className="flex justify-between text-xs font-medium">
                     <span className="text-[#888]">Min Vel</span>
@@ -227,6 +245,40 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            {/* Frequency Compensation */}
+            <div className="pt-8 border-t border-[#2e2e2e]">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <div className="text-sm font-medium">Frequency Compensation</div>
+                  <div className="text-xs text-[#888]">Balance loudness across all notes</div>
+                </div>
+                <button 
+                  onClick={() => updateSetting('freqCompensationEnabled', !settings.freqCompensationEnabled)}
+                  className={`w-10 h-5 rounded-full relative transition-colors ${settings.freqCompensationEnabled ? 'bg-[#1D9E75]' : 'bg-[#2e2e2e]'}`}
+                >
+                  <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${settings.freqCompensationEnabled ? 'left-6' : 'left-1'}`} />
+                </button>
+              </div>
+
+              {settings.freqCompensationEnabled && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-xs font-medium">
+                      <span className="text-[#888]">Amount</span>
+                      <span>{Math.round(settings.freqCompensationAmount * 100)}%</span>
+                    </div>
+                    <input 
+                      type="range" min="0" max="1.0" step="0.05" value={settings.freqCompensationAmount}
+                      onChange={(e) => updateSetting('freqCompensationAmount', parseFloat(e.target.value))}
+                      className="w-full h-1.5 bg-[#242424] rounded-lg appearance-none cursor-pointer accent-[#1D9E75]"
+                    />
+                  </div>
+                  
+                  <FreqCurveDisplay amount={settings.freqCompensationAmount} />
+                </div>
+              )}
+            </div>
+
             {/* Device Info */}
             <div className="pt-6 border-t border-[#2e2e2e]">
               <div className="text-[10px] font-bold text-[#888] uppercase tracking-widest mb-4">Hardware Capabilities</div>
@@ -250,13 +302,14 @@ export default function SettingsPage() {
             <div className="pt-6 border-t border-[#2e2e2e]">
               <div className="text-[10px] font-bold text-[#888] uppercase tracking-widest mb-4">Test Velocity</div>
               <div className="grid grid-cols-4 gap-2 mb-4">
-                {[1, 2, 3, 4].map(id => (
+                {[36, 60, 84, 108].map(note => (
                   <div
-                    key={id}
-                    className="aspect-square bg-[#242424] border border-[#2e2e2e] rounded-xl flex items-center justify-center active:bg-[#1D9E75]/20 active:border-[#1D9E75] transition-colors cursor-pointer touch-none"
-                    onPointerDown={handleTestPress}
+                    key={note}
+                    className="aspect-square bg-[#242424] border border-[#2e2e2e] rounded-xl flex flex-col items-center justify-center active:bg-[#1D9E75]/20 active:border-[#1D9E75] transition-colors cursor-pointer touch-none"
+                    onPointerDown={(e) => handleTestPress(e, note)}
                   >
-                    <div className="w-2 h-2 rounded-full bg-[#333]" />
+                    <div className="w-2 h-2 rounded-full bg-[#333] mb-1" />
+                    <span className="text-[8px] text-[#666] font-bold">C{Math.floor(note/12 - 1)}</span>
                   </div>
                 ))}
               </div>
@@ -265,15 +318,29 @@ export default function SettingsPage() {
                 {testVelocities.length === 0 ? (
                   <div className="text-center py-4 text-xs text-[#444] italic">Tap the pads above to test</div>
                 ) : (
-                  testVelocities.map((test, i) => (
-                    <div key={i} className="flex items-center justify-between bg-[#242424] px-4 py-2 rounded-lg border border-[#2e2e2e] animate-in fade-in slide-in-from-top-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#1D9E75]" />
-                        <span className="text-xs font-mono font-bold">Velocity: {test.v}</span>
+                  testVelocities.map((test, i) => {
+                    const factor = getFreqFactor(test.note);
+                    const amount = settings.freqCompensationEnabled ? settings.freqCompensationAmount : 0;
+                    const blended = 1.0 + (factor - 1.0) * amount;
+                    const diff = Math.round((blended - 1.0) * 100);
+                    const diffText = diff === 0 ? '' : diff > 0 ? ` (+${diff}%)` : ` (${diff}%)`;
+                    const noteName = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][test.note % 12] + (Math.floor(test.note / 12) - 1);
+
+                    return (
+                      <div key={i} className="flex flex-col bg-[#242424] px-4 py-3 rounded-lg border border-[#2e2e2e] animate-in fade-in slide-in-from-top-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-3">
+                            <div className="w-1.5 h-1.5 rounded-full bg-[#1D9E75]" />
+                            <span className="text-xs font-mono font-bold">Raw:{test.raw} → Final:{test.v}</span>
+                          </div>
+                          <span className="text-[10px] font-bold text-[#888] uppercase tracking-widest">via {test.type}</span>
+                        </div>
+                        <div className="text-[10px] text-[#666] font-medium ml-4">
+                          {noteName} note compensation: {diffText || 'None'}
+                        </div>
                       </div>
-                      <span className="text-[10px] font-bold text-[#888] uppercase tracking-widest">via {test.type}</span>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -283,8 +350,8 @@ export default function SettingsPage() {
         {/* MIDI */}
         <section>
           <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#888] font-bold mb-4">MIDI</h2>
-          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-6 space-y-6">
-            <div className="flex items-center justify-between">
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-4 sm:p-6 space-y-6">
+            <div className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center justify-between'}`}>
               <div>
                 <div className="text-sm font-medium">MIDI Channel</div>
                 <div className="text-xs text-[#888]">Channel for outgoing messages</div>
@@ -300,7 +367,7 @@ export default function SettingsPage() {
               </select>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center justify-between'}`}>
               <div>
                 <div className="text-sm font-medium">Transpose</div>
                 <div className="text-xs text-[#888]">Shift pitch in semitones</div>
@@ -324,10 +391,13 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        {/* CONNECTION */}
+        <ConnectionSection />
+
         {/* AUDIO */}
         <section>
           <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#888] font-bold mb-4">Audio</h2>
-          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-6 space-y-6">
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-4 sm:p-6 space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm font-medium">Internal Audio</div>
@@ -353,7 +423,7 @@ export default function SettingsPage() {
               />
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center justify-between'}`}>
               <div>
                 <div className="text-sm font-medium">Sample Set</div>
                 <div className="text-xs text-[#888]">Sound engine preset</div>
@@ -363,7 +433,7 @@ export default function SettingsPage() {
                   <button
                     key={s}
                     onClick={() => updateSetting('sampleSet', s as any)}
-                    className={`px-4 py-1.5 text-xs font-bold capitalize rounded transition-all ${settings.sampleSet === s ? 'bg-[#1D9E75] text-white shadow-lg' : 'text-[#888] hover:text-[#f0f0f0]'}`}
+                    className={`flex-1 sm:px-4 py-1.5 text-xs font-bold capitalize rounded transition-all ${settings.sampleSet === s ? 'bg-[#1D9E75] text-white shadow-lg' : 'text-[#888] hover:text-[#f0f0f0]'}`}
                   >
                     {s}
                   </button>
@@ -376,8 +446,8 @@ export default function SettingsPage() {
         {/* APPEARANCE */}
         <section>
           <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#888] font-bold mb-4">Appearance</h2>
-          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-6 space-y-6">
-            <div className="flex items-center justify-between">
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-4 sm:p-6 space-y-6">
+            <div className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center justify-between'}`}>
               <div>
                 <div className="text-sm font-medium">Accent Color</div>
                 <div className="text-xs text-[#888]">Primary theme color</div>
@@ -405,10 +475,10 @@ export default function SettingsPage() {
         {/* SYSTEM */}
         <section>
           <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#888] font-bold mb-4">System</h2>
-          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] overflow-hidden">
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] overflow-hidden divide-y divide-[#2e2e2e]">
             <Link 
               to="/about" 
-              className="flex items-center justify-between p-6 hover:bg-[#242424] transition-colors"
+              className="flex items-center justify-between p-4 sm:p-6 hover:bg-[#242424] transition-colors"
             >
               <div>
                 <div className="text-sm font-medium">About StudioPro</div>
@@ -416,6 +486,22 @@ export default function SettingsPage() {
               </div>
               <ArrowLeft size={16} className="text-[#888] rotate-180" />
             </Link>
+            
+            <button 
+              onClick={() => {
+                if (confirm('Reset all settings to factory defaults?')) {
+                  localStorage.clear();
+                  window.location.reload();
+                }
+              }}
+              className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-[#E24B4A]/5 transition-colors group"
+            >
+              <div>
+                <div className="text-sm font-medium group-hover:text-[#E24B4A]">Reset All Settings</div>
+                <div className="text-xs text-[#888]">Clear all preferences and connections</div>
+              </div>
+              <RefreshCw size={16} className="text-[#888] group-hover:text-[#E24B4A]" />
+            </button>
           </div>
         </section>
       </div>

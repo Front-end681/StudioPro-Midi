@@ -37,6 +37,8 @@ export const useSettingsStore = create<SettingsActions>()(
       wifiPort: 3001,
       autoReconnect: true,
       lastConnectionMode: 'webmidi',
+      freqCompensationEnabled: true,
+      freqCompensationAmount: 0.4,
 
       updateSetting: (key, value) => set((state) => ({ ...state, [key]: value })),
     }),

@@ -1,0 +1,21 @@
+{
+  "name": "StudioPro MIDI",
+  "short_name": "StudioPro",
+  "description": "Professional MIDI Controller PWA",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#1D9E75",
+  "icons": [
+    {
+      "src": "https://picsum.photos/seed/midi/192/192",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://picsum.photos/seed/midi/512/512",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

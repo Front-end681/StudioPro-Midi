@@ -7,9 +7,12 @@
 }
 
 :root {
+  --header-height: 48px;
+  --controls-height: 52px;
+  --bottom-bar-height: 64px;
   --white-key-width: 48px;
   --black-key-width: 28px;
-  --black-key-height: 60%;
+  --black-key-height: 62%;
   
   --white-key-bg: #F5F5F0;
   --white-key-pressed: #1D9E75;
@@ -22,15 +25,75 @@
   --accent: #1D9E75;
 }
 
-@media (max-width: 768px) {
+/* Desktop */
+@media (min-width: 1025px) {
   :root {
+    --header-height: 48px;
+    --controls-height: 52px;
+    --bottom-bar-height: 64px;
+    --white-key-width: 48px;
+    --black-key-width: 28px;
+  }
+}
+
+/* Tablet Landscape */
+@media (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
+  :root {
+    --header-height: 48px;
+    --controls-height: 52px;
+    --bottom-bar-height: 56px;
+    --white-key-width: 44px;
+    --black-key-width: 26px;
+  }
+}
+
+/* Tablet Portrait */
+@media (min-width: 481px) and (max-width: 768px) and (orientation: portrait) {
+  :root {
+    --header-height: 40px;
+    --controls-height: 52px;
+    --bottom-bar-height: 56px;
+    --white-key-width: 40px;
+    --black-key-width: 24px;
+  }
+}
+
+/* Mobile Landscape */
+@media (max-height: 480px) and (orientation: landscape) {
+  :root {
+    --header-height: 40px;
+    --controls-height: 36px;
+    --bottom-bar-height: 48px;
     --white-key-width: 36px;
     --black-key-width: 22px;
   }
 }
 
+/* Mobile Portrait */
+@media (max-width: 480px) and (orientation: portrait) {
+  :root {
+    --header-height: 40px;
+    --controls-height: 68px;
+    --bottom-bar-height: 56px;
+    --white-key-width: 32px;
+    --black-key-width: 20px;
+  }
+}
+
+html, body, #root {
+  height: 100dvh;
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #0f0f0f;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
 body {
-  @apply bg-[#0f0f0f] text-[#f0f0f0] overflow-hidden select-none;
+  @apply bg-[#0f0f0f] text-[#f0f0f0] select-none;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
@@ -48,6 +111,17 @@ body {
 /* Prevent default touch actions on the keyboard */
 .piano-key {
   touch-action: none;
+}
+
+/* Black key touch target expansion */
+.black-key-touch-target::after {
+  content: '';
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  top: 0;
+  bottom: -20px;
+  z-index: -1;
 }
 
 .no-scrollbar::-webkit-scrollbar {

@@ -33,8 +33,14 @@ export function useMIDI() {
 
   const sendNoteOff = (note: number) => {
     const finalNote = Math.max(0, Math.min(127, note + transpose));
+    // Some devices prefer Note On with velocity 0 as Note Off
     const status = 0x80 + (midiChannel - 1);
     sendRaw([status, finalNote, 0]);
+  };
+
+  const sendSustain = (active: boolean) => {
+    const status = 0xB0 + (midiChannel - 1);
+    sendRaw([status, 64, active ? 127 : 0]);
   };
 
   const sendControlChange = (controller: number, value: number) => {
@@ -54,5 +60,5 @@ export function useMIDI() {
     }
   };
 
-  return { sendNoteOn, sendNoteOff, sendControlChange, sendPitchBend, sendAllNotesOff };
+  return { sendNoteOn, sendNoteOff, sendControlChange, sendPitchBend, sendAllNotesOff, sendSustain };
 }

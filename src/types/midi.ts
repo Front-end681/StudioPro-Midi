@@ -46,4 +46,6 @@ export interface SettingsState {
   wifiPort: number;
   autoReconnect: boolean;
   lastConnectionMode: string;
+  freqCompensationEnabled: boolean;
+  freqCompensationAmount: number;
 }

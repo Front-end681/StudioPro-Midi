@@ -25,6 +25,11 @@ class VelocityTracker {
     }
   }
   
+  getHistory(ms: number) {
+    const now = performance.now();
+    return this.history.filter(p => now - p.t <= ms);
+  }
+
   calculate(e: PointerEvent, settings: VelocitySettings): number {
     const now = performance.now();
     
@@ -72,7 +77,15 @@ class VelocityTracker {
       return Math.round(10 + Math.pow(ratio, 0.7) * 117);
     }
     
-    // 4. Default
+    // 4. Y-position fallback (Intuitive: hitting bottom of key is harder)
+    if (e.currentTarget instanceof HTMLElement) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const relativeY = (e.clientY - rect.top) / rect.height;
+      // Map 0.0-1.0 to 40-127
+      return Math.round(40 + relativeY * 87);
+    }
+
+    // 5. Default
     return 64;
   }
 }

@@ -19,7 +19,7 @@ export default function BlackKey({ note, isPressed, onPress, onRelease }: BlackK
   return (
     <div
       className={cn(
-        "piano-key absolute z-10 transition-colors duration-75 rounded-b-sm shadow-md",
+        "piano-key absolute z-10 transition-colors duration-75 rounded-b-sm shadow-md black-key-touch-target",
         isPressed ? "bg-[#2a7a5a]" : "bg-[#1a1a1a]"
       )}
       style={{ 
@@ -32,7 +32,7 @@ export default function BlackKey({ note, isPressed, onPress, onRelease }: BlackK
         e.preventDefault();
         e.stopPropagation();
         e.currentTarget.setPointerCapture(e.pointerId);
-        const velocity = calculateVelocity(e.nativeEvent);
+        const velocity = calculateVelocity(e.nativeEvent, e.currentTarget as HTMLElement, note);
         onPress(note, velocity);
       }}
       onPointerUp={(e) => {

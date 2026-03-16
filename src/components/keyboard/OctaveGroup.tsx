@@ -19,14 +19,14 @@ const OctaveGroup: React.FC<OctaveGroupProps> = ({ octave, activeKeys, onPress, 
   const blackKeyOffsets = [1, 3, 6, 8, 10];
 
   return (
-    <div className="flex relative h-full">
+    <div className="flex relative h-full items-stretch">
       {whiteKeyOffsets.map((offset, index) => {
         const note = baseNote + offset;
         const hasBlackKey = [0, 1, 3, 4, 5].includes(index);
         const blackNote = baseNote + (index === 0 ? 1 : index === 1 ? 3 : index === 3 ? 6 : index === 4 ? 8 : 10);
 
         return (
-          <div key={note} className="relative h-full">
+          <div key={note} className="relative h-full flex items-stretch">
             <WhiteKey
               note={note}
               isPressed={activeKeys.has(note)}
