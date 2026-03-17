@@ -39,6 +39,7 @@ export const useSettingsStore = create<SettingsActions>()(
       lastConnectionMode: 'webmidi',
       freqCompensationEnabled: true,
       freqCompensationAmount: 0.4,
+      adaptiveEnabled: true,
 
       updateSetting: (key, value) => set((state) => ({ ...state, [key]: value })),
     }),

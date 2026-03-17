@@ -127,3 +127,8 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.1; }
+}

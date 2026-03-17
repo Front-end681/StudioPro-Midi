@@ -48,4 +48,5 @@ export interface SettingsState {
   lastConnectionMode: string;
   freqCompensationEnabled: boolean;
   freqCompensationAmount: number;
+  adaptiveEnabled: boolean;
 }

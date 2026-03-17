@@ -1,5 +1,6 @@
 import { SettingsState, VelocityCurve } from '../types/midi';
 import { applyFreqCompensation } from './frequencyWeight';
+import { adaptiveCalibrator } from './adaptiveCalibrator';
 
 export interface VelocityTracker {
   getHistory(ms: number): { y: number; t: number }[];
@@ -111,9 +112,25 @@ export function calculateFinalVelocity(
     event.pointerType
   );
 
+  // ── NEW: Adaptive Calibration ────────────────────
+  
+  // Feed raw signal to calibrator (it learns)
+  adaptiveCalibrator.update(combined);
+
+  // Get player-relative normalized value
+  const adaptedSignal = adaptiveCalibrator.normalize(combined);
+  
+  // Warmup behavior: blend between fixed and adaptive
+  const progress = adaptiveCalibrator.getCalibrationProgress();
+  const warmupBlend = Math.min(progress / 20, 1.0); // 1.0 at 10 samples (20%)
+  
+  const finalSignal = settings.adaptiveEnabled
+    ? (combined * (1 - warmupBlend)) + (adaptedSignal * warmupBlend)
+    : combined;
+
   // ── STAGE 3: Curve + map to velocity ─────────────
 
-  const curved = applyCurve(combined, settings.velocityCurve);
+  const curved = applyCurve(finalSignal, settings.velocityCurve);
   const rawVelocity = Math.round(
     settings.minVelocity + 
     curved * (settings.maxVelocity - settings.minVelocity)

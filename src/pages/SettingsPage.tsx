@@ -10,6 +10,7 @@ import { ArrowLeft, Check, Smartphone, MousePointer, Zap, Sliders, RefreshCw } f
 
 import { FreqCurveDisplay } from '../components/controls/FreqCurveDisplay';
 import { getFreqFactor } from '../utils/frequencyWeight';
+import { adaptiveCalibrator } from '../utils/adaptiveCalibrator';
 
 export default function SettingsPage() {
   const settings = useSettingsStore();
@@ -20,6 +21,7 @@ export default function SettingsPage() {
   const { isMobile, isPortrait } = useResponsive();
 
   const [testVelocities, setTestVelocities] = useState<{v: number, raw: number, note: number, type: string}[]>([]);
+  const [calibrationProfile, setCalibrationProfile] = useState(adaptiveCalibrator.getProfile());
 
   const handleTestPress = (e: React.PointerEvent, note: number) => {
     e.preventDefault();
@@ -28,6 +30,9 @@ export default function SettingsPage() {
     // We need a dummy element for calculateVelocity
     const dummyElement = e.currentTarget as HTMLElement;
     const finalVelocity = calculateVelocity(e.nativeEvent, dummyElement, note);
+    
+    // Update calibration profile display
+    setCalibrationProfile(adaptiveCalibrator.getProfile());
     
     // To get raw velocity, we'd need to re-run parts of the engine or modify it.
     // For the UI display, let's calculate raw by reversing the freq compensation
@@ -243,6 +248,100 @@ export default function SettingsPage() {
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Adaptive Calibration */}
+            <div className="pt-8 border-t border-[#2e2e2e]">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <div className="text-sm font-medium">Adaptive Calibration</div>
+                  <div className="text-xs text-[#888]">Learns your touch in real-time</div>
+                </div>
+                <button 
+                  onClick={() => updateSetting('adaptiveEnabled', !settings.adaptiveEnabled)}
+                  className={`w-10 h-5 rounded-full relative transition-colors ${settings.adaptiveEnabled ? 'bg-[#1D9E75]' : 'bg-[#2e2e2e]'}`}
+                >
+                  <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${settings.adaptiveEnabled ? 'left-6' : 'left-1'}`} />
+                </button>
+              </div>
+
+              {settings.adaptiveEnabled && (
+                <div className="space-y-4 mt-4 animate-in fade-in slide-in-from-top-2">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
+                      <span className={
+                        calibrationProfile.progress < 20 ? 'text-[#888]' :
+                        calibrationProfile.progress < 60 ? 'text-amber-500' :
+                        calibrationProfile.progress < 100 ? 'text-teal-500' : 'text-[#1D9E75]'
+                      }>
+                        {calibrationProfile.progress < 20 ? 'Warming up...' :
+                         calibrationProfile.progress < 60 ? 'Learning your touch...' :
+                         calibrationProfile.progress < 100 ? 'Almost calibrated' : 'Fully calibrated ✓'}
+                      </span>
+                      <span className="text-[#888]">{Math.round(calibrationProfile.progress)}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-[#242424] rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-500 ${
+                          calibrationProfile.progress < 20 ? 'bg-[#444]' :
+                          calibrationProfile.progress < 60 ? 'bg-amber-500' :
+                          calibrationProfile.progress < 100 ? 'bg-teal-500' : 'bg-[#1D9E75]'
+                        }`}
+                        style={{ width: `${calibrationProfile.progress}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-[#1a1a1a] rounded-xl p-4 border border-[#2e2e2e] space-y-3">
+                    <div className="text-[10px] font-bold text-[#666] uppercase tracking-widest border-b border-[#2e2e2e] pb-2">Your Touch Profile</div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-[#888]">Softest Press</span>
+                        <div className="flex items-center gap-2 flex-1 max-w-[120px] ml-4">
+                          <div className="flex-1 h-1 bg-[#242424] rounded-full overflow-hidden">
+                            <div className="h-full bg-[#888]" style={{ width: `${calibrationProfile.detectedMin * 100}%` }} />
+                          </div>
+                          <span className="text-[10px] font-mono w-8 text-right">{Math.round(calibrationProfile.detectedMin * 100)}%</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-[#888]">Hardest Press</span>
+                        <div className="flex items-center gap-2 flex-1 max-w-[120px] ml-4">
+                          <div className="flex-1 h-1 bg-[#242424] rounded-full overflow-hidden">
+                            <div className="h-full bg-[#1D9E75]" style={{ width: `${calibrationProfile.detectedMax * 100}%` }} />
+                          </div>
+                          <span className="text-[10px] font-mono w-8 text-right">{Math.round(calibrationProfile.detectedMax * 100)}%</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-[#888]">Dynamic Range</span>
+                        <div className="flex items-center gap-2 flex-1 max-w-[120px] ml-4">
+                          <div className="flex-1 h-1 bg-[#242424] rounded-full overflow-hidden">
+                            <div className="h-full bg-teal-500" style={{ width: `${calibrationProfile.range * 100}%` }} />
+                          </div>
+                          <span className="text-[10px] font-mono w-8 text-right">{Math.round(calibrationProfile.range * 100)}%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-[#2e2e2e]">
+                      <span className="text-[9px] text-[#555] font-medium">Samples: {calibrationProfile.sampleCount} / 50</span>
+                      <button 
+                        onClick={() => {
+                          adaptiveCalibrator.reset();
+                          setCalibrationProfile(adaptiveCalibrator.getProfile());
+                        }}
+                        className="text-[9px] font-bold text-red-500/70 hover:text-red-500 uppercase tracking-wider transition-colors"
+                      >
+                        Reset Profile
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Frequency Compensation */}
