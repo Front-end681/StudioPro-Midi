@@ -45,6 +45,11 @@ export const useSettingsStore = create<SettingsActions>()(
     }),
     {
       name: 'studiopro-midi-settings',
+      onRehydrateStorage: () => (state) => {
+        if (state && (state.accentColor === '#00E5FF' || state.accentColor === 'cyan')) {
+          state.updateSetting('accentColor', '#1D9E75');
+        }
+      },
     }
   )
 );

@@ -1,104 +1,95 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Settings, Share2 } from 'lucide-react';
+import { useSettingsStore } from '../../store/settingsStore';
+import { useLayout } from '../../hooks/useLayout';
 import OctaveControl from '../keyboard/OctaveControl';
 import TransposeControl from '../controls/TransposeControl';
-import { useResponsive } from '../../hooks/useResponsive';
-import { useSettingsStore } from '../../store/settingsStore';
-import { useMIDI } from '../../hooks/useMIDI';
+import { Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function ControlsBar() {
-  const { isMobile, isPortrait } = useResponsive();
+  const layout = useLayout();
   const midiChannel = useSettingsStore((state) => state.midiChannel);
   const updateSetting = useSettingsStore((state) => state.updateSetting);
-  const { sendPitchBend } = useMIDI();
-  const [isBendActive, setIsBendActive] = useState(false);
 
   const handleChannelChange = (ch: number) => {
     updateSetting('midiChannel', ch);
   };
 
-  const handleBendPress = () => {
-    setIsBendActive(true);
-    sendPitchBend(0x7F, 0x7F);
-  };
+  const ChannelSelector = ({ fullWidth = false }: { fullWidth?: boolean }) => (
+    <div 
+      className={`flex items-center gap-1 bg-[#141414] p-1 rounded-xl border border-[#2e2e2e] ${fullWidth ? 'w-full' : 'flex-1'}`}
+      style={{ height: `${layout.controlsH * 0.7}px` }}
+    >
+      {[1, 2, 3, 4].map((ch) => (
+        <button 
+          key={ch}
+          onClick={() => handleChannelChange(ch)}
+          className={`flex-1 h-full flex items-center justify-center font-black rounded-lg transition-all`}
+          style={{ 
+            fontSize: 'var(--font-xs)',
+            backgroundColor: ch === midiChannel ? '#1D9E75' : 'transparent',
+            color: ch === midiChannel ? 'black' : '#666',
+            boxShadow: ch === midiChannel ? '0 0 15px rgba(29,158,117,0.3)' : 'none'
+          }}
+        >
+          {layout.isPhone && !layout.isLandscape ? `CH ${ch}` : ch}
+        </button>
+      ))}
+    </div>
+  );
 
-  const handleBendRelease = () => {
-    setIsBendActive(false);
-    sendPitchBend(0x00, 0x40);
-  };
-
-  if (isMobile && isPortrait) {
+  if (layout.controlsRows === 2) {
     return (
-      <div className="flex flex-col bg-[#1a1a1a] border-b border-[#2e2e2e]">
-        {/* Row 1 */}
-        <div className="h-9 flex items-center justify-between px-3 border-b border-[#2e2e2e]/50">
-          <div className="flex items-center gap-2">
-            <OctaveControl />
-            <TransposeControl />
-          </div>
-          <div className="flex items-center gap-2">
-            <button 
-              onPointerDown={handleBendPress}
-              onPointerUp={handleBendRelease}
-              onPointerLeave={handleBendRelease}
-              className={`h-7 px-3 rounded text-[10px] font-bold uppercase tracking-wider transition-all ${isBendActive ? 'bg-[#1D9E75] text-white' : 'bg-[#242424] text-[#888] border border-[#2e2e2e]'}`}
-            >
-              Bend
-            </button>
-            <Link to="/settings" className="p-1.5 hover:bg-[#242424] rounded-full transition-colors text-[#888] hover:text-[#f0f0f0]">
-              <Settings size={16} />
-            </Link>
-          </div>
+      <div 
+        className="bg-[#0A0A0A] flex flex-col border-b border-[#141414] shrink-0 overflow-hidden"
+        style={{ height: `${layout.controlsH}px` }}
+      >
+        <div className="flex-1 flex items-center px-4" style={{ gap: `${layout.vw * 0.01}px` }}>
+          <OctaveControl compact />
+          <TransposeControl labelHidden />
+          <div className="flex-1" />
+          <Link 
+            to="/settings" 
+            className="flex items-center justify-center bg-[#141414] border border-[#2e2e2e] rounded-xl text-[#666] hover:text-[#1D9E75] transition-colors"
+            style={{ width: `${layout.controlsH * 0.4}px`, height: `${layout.controlsH * 0.4}px` }}
+          >
+            <Settings size={16} />
+          </Link>
         </div>
-        {/* Row 2 */}
-        <div className="h-8 flex items-center px-3 gap-2">
-          <span className="text-[9px] font-bold text-[#666] uppercase tracking-widest">CH</span>
-          <div className="flex-1 flex items-center gap-1 bg-[#242424] p-0.5 rounded-lg border border-[#2e2e2e]">
-            {[1, 2, 3, 4].map((ch) => (
-              <button 
-                key={ch}
-                onClick={() => handleChannelChange(ch)}
-                className={`flex-1 py-1 text-[10px] font-bold rounded transition-colors ${ch === midiChannel ? 'bg-[#1D9E75] text-white' : 'text-[#888] hover:text-[#f0f0f0]'}`}
-              >
-                {ch}
-              </button>
-            ))}
-          </div>
+        <div className="flex items-center px-4 pb-2">
+          <ChannelSelector fullWidth />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-[52px] sm:h-[48px] md:h-[52px] border-b border-[#2e2e2e] bg-[#1a1a1a] flex items-center justify-between px-4">
-      <div className="flex items-center gap-2 sm:gap-4">
-        <OctaveControl />
-        <TransposeControl />
-        
-        <div className="h-8 w-[1px] bg-[#2e2e2e] mx-1 sm:mx-2" />
-        
-        <div className="flex items-center gap-1 bg-[#242424] p-1 rounded-lg border border-[#2e2e2e]">
-          {[1, 2, 3, 4].map((ch) => (
-            <button 
-              key={ch}
-              onClick={() => handleChannelChange(ch)}
-              className={`px-2 sm:px-3 py-1 text-[10px] font-bold rounded transition-colors ${ch === midiChannel ? 'bg-[#1D9E75] text-white' : 'text-[#888] hover:text-[#f0f0f0]'}`}
-            >
-              CH {ch}
-            </button>
-          ))}
-        </div>
+    <div 
+      className="bg-[#0A0A0A] flex items-center border-b border-[#141414] shrink-0 overflow-hidden"
+      style={{ 
+        height: `${layout.controlsH}px`,
+        padding: `0 ${layout.vw * 0.02}px`,
+        gap: `${layout.vw * 0.01}px`
+      }}
+    >
+      <div className="flex items-center gap-2 bg-[#141414] p-1 rounded-xl border border-[#2e2e2e]"
+        style={{ height: `${layout.controlsH * 0.7}px` }}
+      >
+        <OctaveControl compact={layout.isPhone} />
+        <div className="w-[1px] h-full bg-[#2e2e2e]" />
+        <TransposeControl labelHidden={!layout.isDesktop} />
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3">
-        <button className="p-2 hover:bg-[#242424] rounded-full transition-colors text-[#888] hover:text-[#f0f0f0]">
-          <Share2 size={18} />
-        </button>
-        <Link to="/settings" className="p-2 hover:bg-[#242424] rounded-full transition-colors text-[#888] hover:text-[#f0f0f0]">
+      <ChannelSelector />
+
+      {layout.isPhone && layout.isLandscape && (
+        <Link 
+          to="/settings" 
+          className="flex items-center justify-center bg-[#141414] border border-[#2e2e2e] rounded-xl text-[#666] hover:text-[#1D9E75] transition-colors"
+          style={{ width: `${layout.controlsH * 0.8}px`, height: `${layout.controlsH * 0.8}px` }}
+        >
           <Settings size={18} />
         </Link>
-      </div>
+      )}
     </div>
   );
 }

@@ -3,14 +3,13 @@ import { useKeyboardStore } from '../../store/keyboardStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useMIDI } from '../../hooks/useMIDI';
 import { useAudio } from '../../hooks/useAudio';
-import { useResponsive } from '../../hooks/useResponsive';
+import { useLayout } from '../../hooks/useLayout';
 import OctaveGroup from './OctaveGroup';
 import { adaptiveCalibrator } from '../../utils/adaptiveCalibrator';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function PianoKeyboard() {
   const baseOctave = useKeyboardStore((state) => state.baseOctave);
-  const numOctaves = useKeyboardStore((state) => state.numOctaves);
   const activeKeys = useKeyboardStore((state) => state.activeKeys);
   const setNotePressed = useKeyboardStore((state) => state.setNotePressed);
   const setNoteReleased = useKeyboardStore((state) => state.setNoteReleased);
@@ -19,7 +18,7 @@ export default function PianoKeyboard() {
   const adaptiveEnabled = useSettingsStore((state) => state.adaptiveEnabled);
   const { sendNoteOn, sendNoteOff } = useMIDI();
   const { playNote, stopNote } = useAudio();
-  const { isMobile, isTablet, isPortrait } = useResponsive();
+  const layout = useLayout();
 
   const [calibrationProgress, setCalibrationProgress] = useState(adaptiveCalibrator.getCalibrationProgress());
 
@@ -39,12 +38,13 @@ export default function PianoKeyboard() {
     setNoteReleased(note);
   };
 
-  // Determine effective number of octaves based on breakpoint
-  const effectiveNumOctaves = (isMobile || (isTablet && isPortrait)) ? 2 : numOctaves;
-  const octaves = Array.from({ length: effectiveNumOctaves }, (_, i) => baseOctave + i);
+  const octaves = Array.from({ length: layout.octaves }, (_, i) => baseOctave + i);
 
   return (
-    <div className="w-full h-full relative overflow-x-auto overflow-y-hidden bg-[#0f0f0f] no-scrollbar">
+    <div 
+      className="min-h-0 min-w-0 relative overflow-x-auto overflow-y-hidden bg-[#050505] no-scrollbar flex flex-col"
+      style={{ height: `${layout.keyboardH}px` }}
+    >
       {/* Calibration Feedback */}
       {adaptiveEnabled && (
         <>

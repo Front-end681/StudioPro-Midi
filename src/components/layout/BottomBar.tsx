@@ -1,7 +1,7 @@
 import { useKeyboardStore } from '../../store/keyboardStore';
 import { RefreshCw } from 'lucide-react';
 import { useMIDI } from '../../hooks/useMIDI';
-import { useResponsive } from '../../hooks/useResponsive';
+import { useLayout } from '../../hooks/useLayout';
 
 export default function BottomBar() {
   const lastNote = useKeyboardStore((state) => state.lastNote);
@@ -10,7 +10,7 @@ export default function BottomBar() {
   const setSustain = useKeyboardStore((state) => state.setSustain);
   const clearActiveKeys = useKeyboardStore((state) => state.clearActiveKeys);
   const { sendControlChange, sendAllNotesOff } = useMIDI();
-  const { isMobile, isPortrait, isLandscape } = useResponsive();
+  const layout = useLayout();
 
   const handleReset = () => {
     sendAllNotesOff();
@@ -31,102 +31,111 @@ export default function BottomBar() {
     return `${name}${octave}`;
   };
 
-  const getVelocityColor = (velocity: number): string => {
-    if (velocity <= 40) return '#1D9E75'; // teal = soft
-    if (velocity <= 90) return '#EF9F27'; // amber = medium
-    return '#E24B4A'; // red = hard
-  };
+  const NoteDisplay = () => (
+    <div className="flex flex-col">
+      {!layout.isPhone && <span className="text-[9px] uppercase tracking-[0.2em] text-[#666] font-black mb-1">Note</span>}
+      <div className="flex items-baseline gap-2">
+        <span className="font-black text-white tracking-tighter" style={{ fontSize: layout.isPhone ? '1.2rem' : '1.5rem' }}>{getNoteName(lastNote)}</span>
+      </div>
+    </div>
+  );
 
-  if (isMobile && isPortrait) {
-    return (
-      <footer className="h-[68px] border-t border-[#2e2e2e] bg-[#1a1a1a] flex flex-col z-[100]">
-        {/* Row 1 */}
-        <div className="h-9 flex items-center px-4 gap-4 border-b border-[#2e2e2e]/50">
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] uppercase tracking-widest text-[#666] font-bold">Note</span>
-            <span className="text-xs font-mono font-bold text-[#f0f0f0]">{getNoteName(lastNote)}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] uppercase tracking-widest text-[#666] font-bold">Vel</span>
-            <span className="text-xs font-mono font-bold text-[#f0f0f0]">{lastVelocity || '---'}</span>
-          </div>
-          <div className="flex-1 h-1.5 bg-[#242424] rounded-full overflow-hidden border border-[#2e2e2e]">
-            <div 
-              className="h-full transition-all duration-75"
-              style={{ 
-                width: `${(lastVelocity / 127) * 100}%`,
-                background: getVelocityColor(lastVelocity)
-              }}
-            />
-          </div>
+  const VelocityDisplay = () => (
+    <div className="flex flex-col">
+      {!layout.isPhone && <span className="text-[9px] uppercase tracking-[0.2em] text-[#666] font-black mb-1">Vel</span>}
+      <div className="flex items-baseline gap-2">
+        <span className="font-black text-white tracking-tighter" style={{ fontSize: layout.isPhone ? '1.2rem' : '1.5rem' }}>{lastVelocity || '0'}</span>
+      </div>
+    </div>
+  );
+
+  const IntensityBar = () => (
+    <div className="flex-1 flex flex-col justify-center">
+      {!layout.isPhone && (
+        <div className="flex justify-between items-end mb-1">
+          <span className="text-[9px] uppercase tracking-[0.2em] text-[#666] font-black">Intensity</span>
+          <span className="text-[10px] font-black text-[#1D9E75] tracking-widest">{Math.round((lastVelocity / 127) * 100)}%</span>
         </div>
-        {/* Row 2 */}
-        <div className="h-8 flex items-stretch">
+      )}
+      <div className="h-2 bg-[#141414] rounded-full overflow-hidden border border-[#2e2e2e]">
+        <div 
+          className="h-full bg-[#1D9E75] shadow-[0_0_15px_rgba(29,158,117,0.6)] transition-all duration-100 ease-out"
+          style={{ width: `${(lastVelocity / 127) * 100}%` }}
+        />
+      </div>
+    </div>
+  );
+
+  if (layout.bottomRows === 2) {
+    return (
+      <footer 
+        className="bg-[#050505] flex flex-col border-t border-[#141414] shrink-0"
+        style={{ height: `${layout.bottomH}px`, padding: `0 ${layout.vw * 0.015}px` }}
+      >
+        <div className="flex-1 flex items-center gap-4">
+          <NoteDisplay />
+          <VelocityDisplay />
+          <IntensityBar />
+        </div>
+        <div className="flex items-center gap-2 pb-2">
           <button 
             onClick={toggleSustain}
-            className={`flex-1 flex items-center justify-center text-[10px] font-bold uppercase tracking-wider transition-all border-r border-[#2e2e2e] ${isSustainOn ? 'bg-[#1D9E75] text-white' : 'bg-[#242424] text-[#888]'}`}
+            className={`flex-1 rounded-lg font-black uppercase tracking-widest transition-all ${isSustainOn ? 'bg-[#1D9E75] text-black shadow-[0_0_15px_rgba(29,158,117,0.3)]' : 'bg-[#141414] text-[#666] border border-[#2e2e2e]'}`}
+            style={{ height: `${layout.bottomH * 0.35}px`, fontSize: 'var(--font-xs)' }}
           >
             Sustain
           </button>
           <button 
             onClick={handleReset}
-            className="flex-1 flex items-center justify-center gap-2 bg-[#242424] text-[#888] text-[10px] font-bold uppercase tracking-wider active:bg-[#2e2e2e] active:text-white"
+            className="flex-1 bg-[#141414] border border-[#1D9E75]/30 text-[#1D9E75] rounded-lg transition-all flex items-center justify-center gap-2"
+            style={{ height: `${layout.bottomH * 0.35}px`, fontSize: 'var(--font-xs)' }}
           >
-            <RefreshCw size={12} />
-            Reset
+            <RefreshCw size={14} />
+            <span>Reset</span>
           </button>
         </div>
       </footer>
     );
   }
 
-  const barHeight = isMobile && isLandscape ? 'h-12' : 'h-14 sm:h-16';
-  const showIntensityLabel = !(isMobile && isLandscape);
-  const sustainLabel = isMobile && isLandscape ? 'SUS' : 'Sustain';
-
   return (
-    <footer className={`${barHeight} border-t border-[#2e2e2e] bg-[#1a1a1a] flex items-center px-4 gap-4 sm:gap-8 z-[100] transition-all duration-300`}>
-      <div className="flex flex-col min-w-[40px] sm:min-w-[60px]">
-        <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-[#888] font-medium">Note</span>
-        <span className="text-xs sm:text-sm font-mono font-bold">{getNoteName(lastNote)}</span>
-      </div>
+    <footer 
+      className="bg-[#050505] flex items-center border-t border-[#141414] shrink-0"
+      style={{ 
+        height: `${layout.bottomH}px`, 
+        padding: `0 ${layout.vw * 0.015}px`,
+        gap: `${layout.vw * 0.04}px`
+      }}
+    >
+      <NoteDisplay />
+      <VelocityDisplay />
+      <IntensityBar />
 
-      <div className="flex flex-col min-w-[40px] sm:min-w-[60px]">
-        <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-[#888] font-medium">Vel</span>
-        <span className="text-xs sm:text-sm font-mono font-bold">{lastVelocity || '---'}</span>
-      </div>
-
-      <div className="flex-1 flex flex-col gap-1">
-        {showIntensityLabel && (
-          <div className="flex justify-between items-end">
-            <span className="text-[10px] uppercase tracking-widest text-[#888] font-medium">Intensity</span>
-          </div>
-        )}
-        <div className="h-1.5 sm:h-2 bg-[#242424] rounded-full overflow-hidden border border-[#2e2e2e]">
-          <div 
-            className="h-full transition-all duration-75"
-            style={{ 
-              width: `${(lastVelocity / 127) * 100}%`,
-              background: getVelocityColor(lastVelocity)
-            }}
-          />
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 sm:gap-4">
+      <div className="flex items-center gap-2">
         <button 
           onClick={toggleSustain}
-          className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 border rounded-md transition-all min-w-[44px] min-h-[44px] justify-center ${isSustainOn ? 'bg-[#1D9E75] border-[#1D9E75] text-white shadow-[0_0_10px_rgba(29,158,117,0.3)]' : 'bg-[#242424] border-[#2e2e2e] text-[#888]'}`}
+          className={`rounded-lg font-black uppercase tracking-widest transition-all ${isSustainOn ? 'bg-[#1D9E75] text-black shadow-[0_0_15px_rgba(29,158,117,0.3)]' : 'bg-[#141414] text-[#666] border border-[#2e2e2e]'}`}
+          style={{ 
+            height: `${layout.bottomH * 0.6}px`, 
+            padding: '0 1.5rem',
+            fontSize: 'var(--font-xs)' 
+          }}
         >
-          <span className="text-[10px] font-bold uppercase tracking-wider">{sustainLabel}</span>
+          {layout.isPhone ? 'Sus' : 'Sustain'}
         </button>
 
         <button 
           onClick={handleReset}
-          className="flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-[#242424] hover:bg-[#2e2e2e] border border-[#2e2e2e] rounded-md transition-colors group min-w-[44px] min-h-[44px] justify-center"
+          className="bg-[#141414] border border-[#1D9E75]/30 hover:border-[#1D9E75] text-[#1D9E75] rounded-lg transition-all flex items-center justify-center group"
+          style={{ 
+            height: `${layout.bottomH * 0.6}px`,
+            width: layout.isPhone ? `${layout.bottomH * 0.6}px` : 'auto',
+            padding: layout.isPhone ? '0' : '0 1.5rem',
+            gap: '0.5rem'
+          }}
         >
-          <RefreshCw size={14} className="text-[#888] group-active:rotate-180 transition-transform duration-300" />
-          <span className="text-[10px] font-bold uppercase tracking-wider group-active:text-white">Reset</span>
+          <RefreshCw size={14} className="group-active:rotate-180 transition-transform" />
+          {!layout.isPhone && <span className="font-black uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>Reset</span>}
         </button>
       </div>
     </footer>

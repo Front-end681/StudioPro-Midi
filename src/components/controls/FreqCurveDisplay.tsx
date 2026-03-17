@@ -35,7 +35,7 @@ export const FreqCurveDisplay: React.FC<FreqCurveDisplayProps> = ({ amount }) =>
   const fillPath = `${curvePath} L ${width} ${centerY} L 0 ${centerY} Z`;
 
   return (
-    <div className="mt-4 bg-[#0f0f0f] rounded-xl p-4 border border-[#2e2e2e]">
+    <div className="mt-4 bg-[#0A0A0A] rounded-xl p-4 border border-[#2e2e2e]">
       <div className="flex justify-between text-[9px] text-[#666] uppercase tracking-widest mb-2">
         <span className="text-amber-500/80">Bass boost ↑</span>
         <span className="text-blue-500/80">Treble reduce ↓</span>

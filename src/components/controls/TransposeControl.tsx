@@ -1,45 +1,48 @@
 import { useSettingsStore } from '../../store/settingsStore';
-import { useResponsive } from '../../hooks/useResponsive';
+import { useLayout } from '../../hooks/useLayout';
 import { Minus, Plus } from 'lucide-react';
 
-export default function TransposeControl() {
+interface TransposeControlProps {
+  labelHidden?: boolean;
+}
+
+export default function TransposeControl({ labelHidden = false }: TransposeControlProps) {
   const transpose = useSettingsStore((state) => state.transpose);
   const updateSetting = useSettingsStore((state) => state.updateSetting);
-  const { isMobile, isTablet, isPortrait, isLandscape } = useResponsive();
+  const layout = useLayout();
 
   const handleDown = () => updateSetting('transpose', Math.max(-12, transpose - 1));
   const handleUp = () => updateSetting('transpose', Math.min(12, transpose + 1));
   const handleReset = () => updateSetting('transpose', 0);
 
-  const isCompact = (isMobile && isLandscape) || (isTablet && isPortrait);
-  const isMinimal = isMobile && isLandscape;
+  const showLabel = !labelHidden && (!layout.isPhone || layout.isLandscape);
 
   return (
-    <div className="flex items-center gap-0.5 sm:gap-1 bg-[#242424] p-0.5 sm:p-1 rounded-lg border border-[#2e2e2e]">
+    <div className="flex items-center gap-1 bg-[#0A0A0A] p-1 rounded-xl border border-[#2e2e2e]">
       <button 
         onClick={handleDown}
-        className="p-1 sm:p-1.5 hover:bg-[#2e2e2e] rounded transition-colors text-[#888] hover:text-[#f0f0f0] min-w-[32px] min-h-[32px] flex items-center justify-center"
+        className="p-1.5 hover:bg-[#141414] rounded-lg transition-colors text-[#666] hover:text-[#1D9E75] min-w-[32px] min-h-[32px] flex items-center justify-center"
       >
-        <Minus size={isMinimal ? 12 : 14} />
+        <Minus size={14} />
       </button>
       <div 
-        className={`px-1 sm:px-2 flex flex-col items-center cursor-pointer select-none ${isMinimal ? 'min-w-[24px]' : isCompact ? 'min-w-[48px]' : 'min-w-[80px]'}`}
+        className={`px-2 flex flex-col items-center cursor-pointer select-none ${showLabel ? 'min-w-[80px]' : 'min-w-[40px]'}`}
         onDoubleClick={handleReset}
       >
-        {!isMinimal && (
-          <span className="text-[8px] sm:text-[9px] uppercase tracking-widest text-[#888] font-bold">
-            {isCompact ? 'Trans' : 'Transpose'}
+        {showLabel && (
+          <span className="uppercase tracking-widest text-[#666] font-black" style={{ fontSize: 'var(--font-xs)' }}>
+            TRANSPOSE
           </span>
         )}
-        <span className="text-xs font-mono font-bold">
+        <span className="font-mono font-black text-[#1D9E75]" style={{ fontSize: 'var(--font-sm)' }}>
           {transpose >= 0 ? `+${transpose}` : transpose}
         </span>
       </div>
       <button 
         onClick={handleUp}
-        className="p-1 sm:p-1.5 hover:bg-[#2e2e2e] rounded transition-colors text-[#888] hover:text-[#f0f0f0] min-w-[32px] min-h-[32px] flex items-center justify-center"
+        className="p-1.5 hover:bg-[#141414] rounded-lg transition-colors text-[#666] hover:text-[#1D9E75] min-w-[32px] min-h-[32px] flex items-center justify-center"
       >
-        <Plus size={isMinimal ? 12 : 14} />
+        <Plus size={14} />
       </button>
     </div>
   );

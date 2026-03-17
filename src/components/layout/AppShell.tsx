@@ -8,7 +8,10 @@ import { useMIDI } from '../../hooks/useMIDI';
 import { useKeyboardStore } from '../../store/keyboardStore';
 import MIDIConnectionManager from '../midi/MIDIConnectionManager';
 
+import { useLayout } from '../../hooks/useLayout';
+
 export default function AppShell() {
+  const layout = useLayout();
   useKeyboardShortcuts();
   useMIDIInit();
   const { sendAllNotesOff } = useMIDI();
@@ -16,7 +19,6 @@ export default function AppShell() {
 
   useEffect(() => {
     const handleLayoutChange = () => {
-      // Release all notes on orientation or significant resize
       sendAllNotesOff();
       clearActiveKeys();
     };
@@ -31,10 +33,10 @@ export default function AppShell() {
   }, [sendAllNotesOff, clearActiveKeys]);
   
   return (
-    <div className="flex flex-col h-[100dvh] bg-[#0f0f0f] text-[#f0f0f0] overflow-hidden">
+    <div className="flex flex-col w-full h-full bg-[#050505] text-[#f0f0f0] overflow-hidden fixed top-0 left-0">
       <MIDIConnectionManager />
       <Header />
-      <main className="flex-1 relative flex flex-col min-h-0">
+      <main className="flex-1 relative flex flex-col min-h-0 min-w-0 overflow-hidden">
         <Outlet />
       </main>
       <BottomBar />

@@ -1,4 +1,5 @@
 import { useTouchVelocity } from '../../hooks/useTouchVelocity';
+import { useLayout } from '../../hooks/useLayout';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -15,17 +16,20 @@ interface BlackKeyProps {
 
 export default function BlackKey({ note, isPressed, onPress, onRelease }: BlackKeyProps) {
   const { calculateVelocity } = useTouchVelocity();
+  const layout = useLayout();
 
   return (
     <div
       className={cn(
         "piano-key absolute z-10 transition-colors duration-75 rounded-b-sm shadow-md black-key-touch-target",
-        isPressed ? "bg-[#2a7a5a]" : "bg-[#1a1a1a]"
+        isPressed 
+          ? "bg-[#1D9E75] shadow-[0_0_15px_rgba(29,158,117,0.4)]" 
+          : "bg-gradient-to-b from-[#1a1a1a] to-[#000000]"
       )}
       style={{ 
-        width: 'var(--black-key-width)', 
-        height: 'var(--black-key-height)',
-        right: 'calc(-1 * var(--black-key-width) / 2)',
+        width: `${layout.blackKeyW}px`, 
+        height: '62%',
+        right: -layout.blackKeyW / 2,
         top: 0
       }}
       onPointerDown={(e) => {

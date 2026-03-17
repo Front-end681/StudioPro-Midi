@@ -1,16 +1,16 @@
 import React, { useState, useRef } from 'react';
 import { useMIDI } from '../../hooks/useMIDI';
-import { useResponsive } from '../../hooks/useResponsive';
+import { useLayout } from '../../hooks/useLayout';
 
 export default function PitchBendWheel() {
   const [value, setValue] = useState(0); // -1 to 1, 0 is center
   const [isActive, setIsActive] = useState(false);
   const { sendPitchBend } = useMIDI();
   const stripRef = useRef<HTMLDivElement>(null);
-  const { isMobile, isPortrait, isTablet } = useResponsive();
+  const layout = useLayout();
 
   // Hide on mobile portrait
-  if (isMobile && isPortrait) return null;
+  if (!layout.showBendStrip) return null;
 
   const updatePitchBend = (v: number) => {
     const clamped = Math.max(-1, Math.min(1, v));
@@ -66,23 +66,22 @@ export default function PitchBendWheel() {
   };
 
   const getIndicatorTop = () => {
-    if (!stripRef.current) return 0;
+    if (!stripRef.current) return '50%';
     const stripHeight = stripRef.current.clientHeight;
-    const indicatorHeight = isMobile ? 16 : 20;
-    // Formula: ((1 - (bendValue + 1) / 2) * (stripHeight - indicatorHeight))
-    return ((1 - (value + 1) / 2) * (stripHeight - indicatorHeight));
+    const indicatorHeight = layout.isPhone ? 16 : 20;
+    const topPx = ((1 - (value + 1) / 2) * (stripHeight - indicatorHeight));
+    return `${topPx}px`;
   };
-
-  const widthClass = isMobile ? 'w-8' : isTablet ? 'w-10' : 'w-11';
 
   return (
     <div 
-      className={`${widthClass} h-full bg-[#1a1a1a] border-r border-[#2e2e2e] relative flex flex-col items-center py-2 cursor-ns-resize touch-none select-none transition-all duration-300`}
+      className="h-full bg-[#141414] border-r border-[#2e2e2e] relative flex flex-col items-center py-2 cursor-ns-resize touch-none select-none transition-all duration-300 bend-strip"
+      style={{ width: `${layout.bendW}px` }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
     >
-      <span className="text-[9px] sm:text-[10px] font-bold text-[#888] uppercase tracking-widest mb-1 sm:mb-2">Bend</span>
+      <span className="font-bold text-[#888] uppercase tracking-widest mb-2" style={{ fontSize: 'var(--font-xs)' }}>Bend</span>
       
       <div ref={stripRef} className="flex-1 w-full relative flex justify-center">
         {/* Track and Ticks */}
@@ -99,14 +98,16 @@ export default function PitchBendWheel() {
 
         {/* Draggable Indicator */}
         <div 
-          className={`absolute left-1/2 -translate-x-1/2 ${isMobile ? 'w-5 h-4' : 'w-7 h-5'} bg-[#1D9E75] rounded shadow-[0_0_10px_rgba(29,158,117,0.3)] flex flex-col items-center justify-center gap-0.5 z-10`}
+          className="absolute left-1/2 -translate-x-1/2 bg-[#1D9E75] rounded shadow-[0_0_10px_rgba(29,158,117,0.3)] flex flex-col items-center justify-center gap-0.5 z-10"
           style={{ 
-            top: `${getIndicatorTop()}px`,
-            backgroundColor: 'var(--accent)',
+            top: getIndicatorTop(),
+            width: layout.isPhone ? '20px' : '28px',
+            height: layout.isPhone ? '16px' : '20px',
+            transform: !stripRef.current ? 'translate(-50%, -50%)' : 'translateX(-50%)',
           }}
         >
-          <div className="w-3 sm:w-4 h-[1px] bg-white/40" />
-          <div className="w-3 sm:w-4 h-[1px] bg-white/40" />
+          <div className="w-3 sm:w-4 h-[1px] bg-black/40" />
+          <div className="w-3 sm:w-4 h-[1px] bg-black/40" />
         </div>
       </div>
     </div>
