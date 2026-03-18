@@ -49,4 +49,9 @@ export interface SettingsState {
   freqCompensationEnabled: boolean;
   freqCompensationAmount: number;
   adaptiveEnabled: boolean;
+  melodicIntelligenceEnabled: boolean;
+  melodicStrength: 'subtle' | 'natural' | 'expressive';
+  pressureMode: 'pen' | 'area' | 'duration';
+  minContactArea: number;
+  maxContactArea: number;
 }

@@ -1,9 +1,66 @@
 import { SettingsState, VelocityCurve } from '../types/midi';
 import { applyFreqCompensation } from './frequencyWeight';
 import { adaptiveCalibrator } from './adaptiveCalibrator';
+import { melodicIntelligence } from './melodicIntelligence';
 
 export interface VelocityTracker {
   getHistory(ms: number): { y: number; t: number }[];
+}
+
+export function penPressureToVelocity(
+  pressure: number,
+  settings: SettingsState
+): number {
+  if (pressure <= 0 || pressure === 0.5) {
+    // Not a real pressure reading — fallback
+    return 80;
+  }
+  
+  // Minimum pressure threshold (ignore ghost touches)
+  const MIN_PRESSURE = 0.05;
+  if (pressure < MIN_PRESSURE) return settings.minVelocity;
+  
+  // Normalize above threshold
+  const normalized = (pressure - MIN_PRESSURE) / (1.0 - MIN_PRESSURE);
+  
+  // Apply expressive curve
+  const curve = 0.7; // slightly sensitive at soft end
+  const curved = Math.pow(normalized, curve);
+  
+  const velocity = settings.minVelocity + 
+    curved * (settings.maxVelocity - settings.minVelocity);
+  
+  return Math.max(1, Math.min(127, Math.round(velocity)));
+}
+
+export function contactAreaToVelocity(
+  event: PointerEvent,
+  settings: SettingsState
+): number | null {
+  // Check if area data is available
+  if (!event.width || !event.height || 
+      event.width <= 1 || event.height <= 1) {
+    return null; // not available on this device
+  }
+  
+  const area = event.width * event.height;
+  
+  // Calibration (adjustable in settings)
+  const MIN_AREA = settings.minContactArea;
+  const MAX_AREA = settings.maxContactArea;
+  
+  const normalized = Math.min(
+    Math.max((area - MIN_AREA) / (MAX_AREA - MIN_AREA), 0),
+    1.0
+  );
+  
+  // Apply curve
+  const curved = Math.pow(normalized, 0.75);
+  
+  const velocity = settings.minVelocity + 
+    curved * (settings.maxVelocity - settings.minVelocity);
+  
+  return Math.max(1, Math.min(127, Math.round(velocity)));
 }
 
 function combineSignals(
@@ -85,18 +142,21 @@ export function calculateFinalVelocity(
 
   // Signal B: hardware pressure
   let signalB: number | null = null;
-  if (event.pressure > 0 && 
-      event.pressure !== 0.5 && 
-      event.pointerType === 'touch') {
-    signalB = Math.pow(event.pressure, 0.75);
+  if (event.pressure > 0 && event.pressure !== 0.5) {
+    // Normalize above threshold
+    const MIN_PRESSURE = 0.05;
+    if (event.pressure >= MIN_PRESSURE) {
+      signalB = (event.pressure - MIN_PRESSURE) / (1.0 - MIN_PRESSURE);
+    }
   }
 
   // Signal C: contact area
   let signalC: number | null = null;
-  if (event.pointerType === 'touch' && event.width > 1) {
+  if (event.width > 1 && event.height > 1) {
     const area = event.width * event.height;
     signalC = Math.min(
-      Math.max((area - 80) / 820, 0), 1.0
+      Math.max((area - settings.minContactArea) / (settings.maxContactArea - settings.minContactArea), 0), 
+      1.0
     );
   }
 
@@ -107,10 +167,22 @@ export function calculateFinalVelocity(
 
   // ── STAGE 2: Combine ─────────────────────────────
 
-  const combined = combineSignals(
-    signalA, signalB, signalC, signalD,
-    event.pointerType
-  );
+  let combined = 0;
+  
+  if (event.pointerType === 'pen' && signalB !== null) {
+    // Priority 1: S Pen / Pen Pressure
+    combined = signalB;
+  } else if (event.pointerType === 'touch' && signalC !== null) {
+    // Priority 2: Contact Area Simulation (60%) + Speed (40%)
+    const speedSignal = signalA ?? 0.5;
+    combined = (signalC * 0.6) + (speedSignal * 0.4);
+  } else {
+    // Priority 3: Speed/Duration Fallback
+    combined = combineSignals(
+      signalA, signalB, signalC, signalD,
+      event.pointerType
+    );
+  }
 
   // ── NEW: Adaptive Calibration ────────────────────
   
@@ -138,13 +210,22 @@ export function calculateFinalVelocity(
 
   // ── STAGE 4: Frequency compensation ──────────────
 
-  const finalVelocity = applyFreqCompensation(
+  const freqCompensated = applyFreqCompensation(
     rawVelocity,
     midiNote,
     settings.freqCompensationEnabled 
       ? settings.freqCompensationAmount 
       : 0
   );
+
+  // ── STAGE 5: Melodic intelligence (new) ──────────
+
+  const finalVelocity = settings.melodicIntelligenceEnabled
+    ? melodicIntelligence.analyze(midiNote, freqCompensated, settings.melodicStrength)
+    : freqCompensated;
+
+  // Record this note in history
+  melodicIntelligence.record(midiNote, finalVelocity);
 
   return finalVelocity;
 }

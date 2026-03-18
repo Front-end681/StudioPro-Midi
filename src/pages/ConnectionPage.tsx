@@ -39,7 +39,7 @@ export default function ConnectionPage() {
   const isWebMIDISupported = !!navigator.requestMIDIAccess;
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar" style={{ padding: layout.isPhone ? '1rem' : '2rem' }}>
+    <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar" style={{ padding: layout.isPhone ? '1rem' : '2rem' }}>
       <div className="max-w-2xl mx-auto pb-24">
         <div className="flex items-center gap-4 mb-8">
           <Link to="/" className="p-2.5 bg-[#141414] hover:bg-[#1a1a1a] rounded-xl transition-colors text-[#666] hover:text-[#1D9E75] border border-[#2e2e2e]">
@@ -48,7 +48,7 @@ export default function ConnectionPage() {
           <h1 className="font-black tracking-tighter uppercase italic text-white" style={{ fontSize: 'var(--font-xl)' }}>Connection</h1>
         </div>
 
-        <div className="flex bg-[#1a1a1a] p-1 rounded-xl border border-[#2e2e2e] mb-8">
+        <div className="flex bg-[#1a1a1a] p-1 rounded-xl border border-[#2e2e2e] mb-8 overflow-hidden">
           <button 
             onClick={() => handleTabChange('midi')}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 font-bold uppercase tracking-wider rounded-lg transition-all ${activeTab === 'midi' ? 'bg-[#242424] text-[#1D9E75] shadow-lg' : 'text-[#888] hover:text-[#f0f0f0]'}`}

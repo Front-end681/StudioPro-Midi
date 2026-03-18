@@ -186,7 +186,10 @@ wss.on('connection', (ws) => {
       <h2 className="font-medium tracking-[0.08em] uppercase text-[#666] mb-4" style={{ fontSize: 'var(--font-xs)' }}>Connection</h2>
       <div className={`grid ${layout.isPhone ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
         {/* USB CARD */}
-        <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-5 flex flex-col justify-between group relative">
+        <div 
+          className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] flex flex-col justify-between group relative"
+          style={{ padding: layout.isPhone ? `${layout.vh * 0.015}px` : '1.25rem' }}
+        >
           <button 
             onClick={() => setIsUsbModalOpen(true)}
             className="absolute top-4 right-4 p-1.5 text-[#444] hover:text-[#1D9E75] transition-colors"
@@ -212,7 +215,10 @@ wss.on('connection', (ws) => {
         </div>
 
         {/* WIFI CARD */}
-        <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-5 flex flex-col justify-between group relative">
+        <div 
+          className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] flex flex-col justify-between group relative"
+          style={{ padding: layout.isPhone ? `${layout.vh * 0.015}px` : '1.25rem' }}
+        >
           <button 
             onClick={() => setIsWifiModalOpen(true)}
             className="absolute top-4 right-4 p-1.5 text-[#444] hover:text-[#1D9E75] transition-colors"

@@ -11,11 +11,45 @@
 
 html, body, #root {
   width: 100dvw;
-  height: 100dvh;
-  overflow: hidden;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
   margin: 0;
   padding: 0;
   background: #050505;
+}
+
+.keyboard-page {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.keyboard-area {
+  flex: 1 !important;
+  min-height: 0 !important;
+  position: relative !important;
+  padding: 0 !important;
+}
+
+.keyboard-inner {
+  position: absolute !important;
+  inset: 0 !important;
+}
+
+.piano-keyboard-root {
+  height: 100% !important;
+  align-self: stretch !important;
+}
+
+.piano-keys-row {
+  height: 100% !important;
+  align-items: stretch !important;
+}
+
+.white-key {
+  height: 100% !important;
+  align-self: stretch !important;
 }
 
 * {

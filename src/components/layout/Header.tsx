@@ -35,7 +35,7 @@ export default function Header() {
 
   return (
     <header 
-      className="flex items-center justify-between bg-[#0A0A0A] z-50 border-b border-[#141414] shrink-0"
+      className="flex items-center justify-between bg-[#0A0A0A] z-50 border-b border-[#141414] shrink-0 overflow-hidden"
       style={{ 
         height: `${layout.headerH}px`,
         padding: `0 ${layout.vw * 0.02}px`
@@ -43,11 +43,13 @@ export default function Header() {
     >
       <div className="flex items-center gap-4">
         <Link to="/" className="flex items-center gap-2">
-          <span 
-            className="font-black tracking-tighter text-[#1D9E75] italic uppercase whitespace-nowrap"
-            style={{ fontSize: layout.isPhone ? 'var(--font-sm)' : 'var(--font-lg)' }}
-          >
-            {layout.logoText}
+          <span style={{ 
+            fontSize: 'clamp(12px, 2vw, 18px)',
+            fontWeight: 700,
+            color: '#1D9E75',
+            whiteSpace: 'nowrap'
+          }}>
+            StudioPro MIDI
           </span>
         </Link>
         {!layout.isPhone && <div className="h-4 w-[1px] bg-[#2e2e2e]" />}

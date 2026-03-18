@@ -42,8 +42,8 @@ export default function PianoKeyboard() {
 
   return (
     <div 
-      className="min-h-0 min-w-0 relative overflow-x-auto overflow-y-hidden bg-[#050505] no-scrollbar flex flex-col"
-      style={{ height: `${layout.keyboardH}px` }}
+      className="piano-keyboard-root min-h-0 min-w-0 relative overflow-x-auto overflow-y-hidden bg-[#050505] no-scrollbar flex flex-col"
+      style={{ height: '100%', alignSelf: 'stretch' }}
     >
       {/* Calibration Feedback */}
       {adaptiveEnabled && (
@@ -91,7 +91,7 @@ export default function PianoKeyboard() {
         </>
       )}
 
-      <div className="flex h-full items-stretch min-w-max">
+      <div className="piano-keys-row flex min-w-max">
         {octaves.map((octave) => (
           <OctaveGroup
             key={octave}

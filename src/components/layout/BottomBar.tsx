@@ -51,12 +51,12 @@ export default function BottomBar() {
 
   const IntensityBar = () => (
     <div className="flex-1 flex flex-col justify-center">
-      {!layout.isPhone && (
-        <div className="flex justify-between items-end mb-1">
-          <span className="text-[9px] uppercase tracking-[0.2em] text-[#666] font-black">Intensity</span>
-          <span className="text-[10px] font-black text-[#1D9E75] tracking-widest">{Math.round((lastVelocity / 127) * 100)}%</span>
-        </div>
-      )}
+      <div className="flex justify-between items-end mb-1">
+        <span className="text-[9px] uppercase tracking-[0.2em] text-[#666] font-black">
+          {layout.isPhone ? 'INT' : 'Intensity'}
+        </span>
+        <span className="text-[10px] font-black text-[#1D9E75] tracking-widest">{Math.round((lastVelocity / 127) * 100)}%</span>
+      </div>
       <div className="h-2 bg-[#141414] rounded-full overflow-hidden border border-[#2e2e2e]">
         <div 
           className="h-full bg-[#1D9E75] shadow-[0_0_15px_rgba(29,158,117,0.6)] transition-all duration-100 ease-out"

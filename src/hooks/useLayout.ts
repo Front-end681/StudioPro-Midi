@@ -11,7 +11,9 @@ export function useLayout() {
     const isDesktop = minDim >= 900;
     
     // Heights
-    const headerH = Math.round(vh * (isPhone ? 0.07 : 0.055));
+    const headerH = (isPhone && isLandscape)
+      ? Math.round(vh * 0.09)
+      : Math.round(vh * (isPhone ? 0.07 : 0.055));
     const controlsH = (isPhone && !isLandscape)
       ? Math.round(vh * 0.15)
       : Math.round(vh * 0.085);
@@ -33,7 +35,12 @@ export function useLayout() {
     const blackKeyW = Math.round(whiteKeyW * 0.6);
     
     // Font sizes
-    const base = Math.min(Math.round(minDim * 0.022), 16);
+    const base = (() => {
+      if (isPhone && isLandscape) return 11;
+      if (isPhone && !isLandscape) return 12;
+      if (isTablet) return 14;
+      return 15;
+    })();
     
     // Apply CSS variables
     const root = document.documentElement;
@@ -58,7 +65,6 @@ export function useLayout() {
       showBendHorizontal: !isLandscape && isPhone,
       controlsRows: (isPhone && !isLandscape) ? 2 : 1,
       bottomRows: (isPhone && !isLandscape) ? 2 : 1,
-      logoText: isPhone ? 'SP MIDI' : 'StudioPro MIDI',
       showRangeInHeader: isDesktop || isTablet,
       fontBase: base,
     };

@@ -33,7 +33,7 @@ export default function AppShell() {
   }, [sendAllNotesOff, clearActiveKeys]);
   
   return (
-    <div className="flex flex-col w-full h-full bg-[#050505] text-[#f0f0f0] overflow-hidden fixed top-0 left-0">
+    <div className="flex flex-col w-full h-[100dvh] bg-[#050505] text-[#f0f0f0] overflow-hidden fixed top-0 left-0">
       <MIDIConnectionManager />
       <Header />
       <main className="flex-1 relative flex flex-col min-h-0 min-w-0 overflow-hidden">

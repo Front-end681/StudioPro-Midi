@@ -25,7 +25,7 @@ export default function WhiteKey({ note, isPressed, onPress, onRelease, showLabe
   const octave = Math.floor(note / 12) - 1;
   const isC = name === 'C';
 
-  const { calculateVelocity } = useTouchVelocity();
+  const { calculateVelocity, refineVelocity } = useTouchVelocity();
 
   const getLabelColor = () => {
     if (isPressed) return "text-black";
@@ -35,19 +35,23 @@ export default function WhiteKey({ note, isPressed, onPress, onRelease, showLabe
   return (
     <div
       className={cn(
-        "piano-key relative flex-shrink-0 border-r border-[#1a1a1a] transition-colors duration-75 h-full",
+        "piano-key white-key relative flex-shrink-0 border-r border-[#1a1a1a] transition-colors duration-75",
         isPressed ? "bg-[#1D9E75]" : "bg-[#FFFFFF]"
       )}
-      style={{ width: `${layout.whiteKeyW}px` }}
+      style={{ width: `${layout.whiteKeyW}px`, height: '100%', alignSelf: 'stretch' }}
       onPointerDown={(e) => {
         e.preventDefault();
         e.currentTarget.setPointerCapture(e.pointerId);
         const velocity = calculateVelocity(e.nativeEvent, e.currentTarget as HTMLElement, note);
         onPress(note, velocity);
       }}
-      onPointerUp={() => onRelease(note)}
+      onPointerUp={(e) => {
+        refineVelocity(e.nativeEvent, note);
+        onRelease(note);
+      }}
       onPointerLeave={(e) => {
         if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+          refineVelocity(e.nativeEvent, note);
           onRelease(note);
         }
       }}

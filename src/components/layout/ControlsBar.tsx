@@ -47,13 +47,6 @@ export default function ControlsBar() {
           <OctaveControl compact />
           <TransposeControl labelHidden />
           <div className="flex-1" />
-          <Link 
-            to="/settings" 
-            className="flex items-center justify-center bg-[#141414] border border-[#2e2e2e] rounded-xl text-[#666] hover:text-[#1D9E75] transition-colors"
-            style={{ width: `${layout.controlsH * 0.4}px`, height: `${layout.controlsH * 0.4}px` }}
-          >
-            <Settings size={16} />
-          </Link>
         </div>
         <div className="flex items-center px-4 pb-2">
           <ChannelSelector fullWidth />
@@ -80,16 +73,6 @@ export default function ControlsBar() {
       </div>
 
       <ChannelSelector />
-
-      {layout.isPhone && layout.isLandscape && (
-        <Link 
-          to="/settings" 
-          className="flex items-center justify-center bg-[#141414] border border-[#2e2e2e] rounded-xl text-[#666] hover:text-[#1D9E75] transition-colors"
-          style={{ width: `${layout.controlsH * 0.8}px`, height: `${layout.controlsH * 0.8}px` }}
-        >
-          <Settings size={18} />
-        </Link>
-      )}
     </div>
   );
 }

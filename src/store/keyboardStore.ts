@@ -16,6 +16,7 @@ interface KeyboardState {
   setNoteReleased: (note: number) => void;
   setPressStartTime: (note: number, time: number) => void;
   setSustain: (on: boolean) => void;
+  setLastVelocity: (velocity: number) => void;
   clearActiveKeys: () => void;
 }
 
@@ -69,6 +70,8 @@ export const useKeyboardStore = create<KeyboardState>((set) => ({
     }
     return { isSustainOn: true };
   }),
+
+  setLastVelocity: (velocity) => set({ lastVelocity: velocity }),
 
   clearActiveKeys: () => set({ 
     activeKeys: new Map(), 

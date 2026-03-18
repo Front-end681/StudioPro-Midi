@@ -40,6 +40,11 @@ export const useSettingsStore = create<SettingsActions>()(
       freqCompensationEnabled: true,
       freqCompensationAmount: 0.4,
       adaptiveEnabled: true,
+      melodicIntelligenceEnabled: true,
+      melodicStrength: 'natural',
+      pressureMode: 'duration',
+      minContactArea: 100,
+      maxContactArea: 1200,
 
       updateSetting: (key, value) => set((state) => ({ ...state, [key]: value })),
     }),
