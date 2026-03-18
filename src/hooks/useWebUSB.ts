@@ -31,7 +31,15 @@ export function useWebUSB() {
     try {
       // MIDI over USB usually uses 4-byte packets
       // [Code Index Number, MIDI_0, MIDI_1, MIDI_2]
-      const packet = new Uint8Array([0x09, ...data]); // 0x09 is Note On
+      const status = data[0] & 0xF0;
+      let cin = 0x09; // Default to Note On
+      
+      if (status === 0x80) cin = 0x08; // Note Off
+      else if (status === 0x90) cin = 0x09; // Note On
+      else if (status === 0xB0) cin = 0x0B; // Control Change
+      else if (status === 0xE0) cin = 0x0E; // Pitch Bend
+      
+      const packet = new Uint8Array([cin, ...data]);
       await usbDevice.transferOut(1, packet);
     } catch (err) {
       console.error('USB MIDI Transfer Error:', err);

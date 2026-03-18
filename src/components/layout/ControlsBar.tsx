@@ -19,7 +19,7 @@ export default function ControlsBar() {
       className={`flex items-center gap-1 bg-[#141414] p-1 rounded-xl border border-[#2e2e2e] ${fullWidth ? 'w-full' : 'flex-1'}`}
       style={{ height: `${layout.controlsH * 0.7}px` }}
     >
-      {[1, 2, 3, 4].map((ch) => (
+      {Array.from({ length: 16 }, (_, i) => i + 1).map((ch) => (
         <button 
           key={ch}
           onClick={() => handleChannelChange(ch)}
@@ -31,7 +31,7 @@ export default function ControlsBar() {
             boxShadow: ch === midiChannel ? '0 0 15px rgba(29,158,117,0.3)' : 'none'
           }}
         >
-          {layout.isPhone && !layout.isLandscape ? `CH ${ch}` : ch}
+          {layout.isPhone && !layout.isLandscape ? ch : ch}
         </button>
       ))}
     </div>

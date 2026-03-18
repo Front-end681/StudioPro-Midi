@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useSettingsStore } from '../store/settingsStore';
 
 export function useLayout() {
+  const numOctaves = useSettingsStore((state) => state.numOctaves);
+
   const calculate = () => {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
@@ -26,7 +29,7 @@ export function useLayout() {
       : Math.round(vw * 0.042);
     
     // Key dimensions
-    const octaves = isPhone ? 2 : 3;
+    const octaves = numOctaves;
     const whiteCount = octaves * 7;
     const availableW = vw - bendW;
     const autoW = Math.floor(availableW / whiteCount);
@@ -88,7 +91,7 @@ export function useLayout() {
         window.screen.orientation.removeEventListener('change', update);
       }
     };
-  }, []);
+  }, [numOctaves]);
   
   return layout;
 }

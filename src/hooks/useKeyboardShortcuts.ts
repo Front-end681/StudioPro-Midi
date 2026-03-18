@@ -3,8 +3,8 @@ import { useKeyboardStore } from '../store/keyboardStore';
 import { useMIDI } from './useMIDI';
 
 export function useKeyboardShortcuts() {
-  const { baseOctave, setBaseOctave, numOctaves, setNotePressed, setNoteReleased, setSustain, isSustainOn } = useKeyboardStore();
-  const { sendNoteOn, sendNoteOff, sendControlChange } = useMIDI();
+  const { baseOctave, setBaseOctave, numOctaves, setNotePressed, setNoteReleased, setSustain, isSustainOn, clearActiveKeys } = useKeyboardStore();
+  const { sendNoteOn, sendNoteOff, sendControlChange, sendAllNotesOff } = useMIDI();
 
   useEffect(() => {
     const keyMap: Record<string, number> = {
@@ -30,6 +30,11 @@ export function useKeyboardShortcuts() {
       if (e.repeat) return;
       const key = e.key.toLowerCase();
 
+      if (key === 'escape') {
+        sendAllNotesOff();
+        clearActiveKeys();
+        return;
+      }
       if (key === 'z') {
         setBaseOctave(Math.max(0, baseOctave - 1));
         return;

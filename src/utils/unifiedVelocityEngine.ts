@@ -227,5 +227,5 @@ export function calculateFinalVelocity(
   // Record this note in history
   melodicIntelligence.record(midiNote, finalVelocity);
 
-  return finalVelocity;
+  return Math.max(1, Math.min(127, Math.round(finalVelocity)));
 }

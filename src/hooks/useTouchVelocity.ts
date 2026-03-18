@@ -56,7 +56,7 @@ export function useTouchVelocity() {
     if (pendingAreaVelocity.current.has(event.pointerId)) {
       const areaVel = pendingAreaVelocity.current.get(event.pointerId)!;
       // Final: 55% area + 45% actual duration
-      const finalVelocity = Math.round(areaVel * 0.55 + durationVelocity * 0.45);
+      const finalVelocity = Math.max(1, Math.min(127, Math.round(areaVel * 0.55 + durationVelocity * 0.45)));
       setLastVelocity(finalVelocity);
       pendingAreaVelocity.current.delete(event.pointerId);
     } else {
