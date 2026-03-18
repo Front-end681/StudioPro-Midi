@@ -98,6 +98,9 @@ export default function ConnectionPage() {
                       <div className="space-y-1">
                         <p className="text-[#888]" style={{ fontSize: 'var(--font-sm)' }}>No MIDI outputs detected.</p>
                         <p className="text-[#444]" style={{ fontSize: 'var(--font-xs)' }}>Connect a MIDI device and click Refresh.</p>
+                        <p className="text-[#1D9E75] mt-4 font-bold" style={{ fontSize: 'var(--font-xs)' }}>
+                          Note: USB MIDI devices should appear here automatically. If not, check your cable or try the "USB" tab for advanced connection.
+                        </p>
                       </div>
                     </div>
                   ) : (
@@ -205,9 +208,14 @@ export default function ConnectionPage() {
               
               <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-6 flex items-start gap-4">
                 <AlertCircle className="text-[#888] flex-shrink-0" size={18} />
-                <p className="text-[#888] leading-relaxed" style={{ fontSize: 'var(--font-xs)' }}>
-                  Requires Chrome or Edge browser. Connect a class-compliant USB-MIDI device via USB.
-                </p>
+                <div className="space-y-2">
+                  <p className="text-[#888] leading-relaxed" style={{ fontSize: 'var(--font-xs)' }}>
+                    Requires Chrome or Edge browser. Connect a class-compliant USB-MIDI device via USB.
+                  </p>
+                  <p className="text-[#1D9E75] font-bold" style={{ fontSize: 'var(--font-xs)' }}>
+                    Tip: If your device is a standard MIDI keyboard, use the "Web MIDI" tab instead. The "USB" tab is for advanced WebUSB connections.
+                  </p>
+                </div>
               </div>
             </div>
           )}

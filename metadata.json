@@ -1,5 +1,5 @@
 {
   "name": "StudioPro MIDI",
   "description": "Professional touch-velocity MIDI controller PWA for DAWs and hardware.",
-  "requestFramePermissions": []
+  "requestFramePermissions": ["usb", "midi"]
 }

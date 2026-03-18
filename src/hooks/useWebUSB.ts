@@ -14,10 +14,45 @@ export function useWebUSB() {
     try {
       const selectedDevice = await nav.usb.requestDevice({ filters: [] });
       await selectedDevice.open();
-      if (selectedDevice.configuration === null) {
-        await selectedDevice.selectConfiguration(1);
+      
+      // Find MIDI interface (Class 1: Audio, Subclass 3: MIDI Streaming)
+      let midiInterface = null;
+      let outEndpoint = null;
+      let midiConfigValue = 1;
+
+      for (const config of selectedDevice.configurations) {
+        for (const iface of config.interfaces) {
+          for (const alt of iface.alternates) {
+            if (alt.interfaceClass === 1 && alt.interfaceSubclass === 3) {
+              midiInterface = iface;
+              midiConfigValue = config.configurationValue;
+              for (const endpoint of alt.endpoints) {
+                if (endpoint.direction === 'out') {
+                  outEndpoint = endpoint;
+                  break;
+                }
+              }
+            }
+            if (midiInterface && outEndpoint) break;
+          }
+          if (midiInterface && outEndpoint) break;
+        }
+        if (midiInterface && outEndpoint) break;
       }
-      await selectedDevice.claimInterface(0);
+
+      if (midiInterface && outEndpoint) {
+        await selectedDevice.selectConfiguration(midiConfigValue);
+        await selectedDevice.claimInterface(midiInterface.interfaceNumber);
+        (selectedDevice as any)._midiOutEndpoint = outEndpoint.endpointNumber;
+      } else {
+        // Fallback to interface 0, endpoint 1 if not found
+        if (selectedDevice.configuration === null) {
+          await selectedDevice.selectConfiguration(1);
+        }
+        await selectedDevice.claimInterface(0);
+        (selectedDevice as any)._midiOutEndpoint = 1;
+      }
+
       setUsbDevice(selectedDevice);
       setUsbError(null);
     } catch (err) {
@@ -29,8 +64,7 @@ export function useWebUSB() {
     if (!usbDevice) return;
     
     try {
-      // MIDI over USB usually uses 4-byte packets
-      // [Code Index Number, MIDI_0, MIDI_1, MIDI_2]
+      const endpoint = (usbDevice as any)._midiOutEndpoint || 1;
       const status = data[0] & 0xF0;
       let cin = 0x09; // Default to Note On
       
@@ -40,7 +74,7 @@ export function useWebUSB() {
       else if (status === 0xE0) cin = 0x0E; // Pitch Bend
       
       const packet = new Uint8Array([cin, ...data]);
-      await usbDevice.transferOut(1, packet);
+      await usbDevice.transferOut(endpoint, packet);
     } catch (err) {
       console.error('USB MIDI Transfer Error:', err);
     }
