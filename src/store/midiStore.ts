@@ -3,6 +3,7 @@ import { DeviceCapabilities } from '../types/midi';
 
 interface MIDIState {
   connectionMode: 'webmidi' | 'usb' | 'wifi' | 'none';
+  connectionStatus: 'connected' | 'no-devices' | 'error' | 'disconnected';
   midiOutputs: MIDIOutput[];
   selectedOutput: MIDIOutput | null;
   midiError: string | null;
@@ -20,6 +21,7 @@ interface MIDIState {
   deviceCapabilities: DeviceCapabilities;
   
   setConnectionMode: (mode: 'webmidi' | 'usb' | 'wifi' | 'none') => void;
+  setConnectionStatus: (status: 'connected' | 'no-devices' | 'error' | 'disconnected') => void;
   setMidiOutputs: (outputs: MIDIOutput[]) => void;
   setSelectedOutput: (output: MIDIOutput | null) => void;
   setMidiError: (error: string | null) => void;
@@ -34,6 +36,7 @@ interface MIDIState {
 
 export const useMidiStore = create<MIDIState>((set) => ({
   connectionMode: 'webmidi',
+  connectionStatus: 'disconnected',
   midiOutputs: [],
   selectedOutput: null,
   midiError: null,
@@ -51,6 +54,7 @@ export const useMidiStore = create<MIDIState>((set) => ({
   },
 
   setConnectionMode: (mode) => set({ connectionMode: mode }),
+  setConnectionStatus: (status) => set({ connectionStatus: status }),
   setMidiOutputs: (outputs) => set({ midiOutputs: outputs }),
   setSelectedOutput: (output) => set({ selectedOutput: output }),
   setMidiError: (error) => set({ midiError: error }),

@@ -7,6 +7,7 @@ import {
   penPressureToVelocity, 
   contactAreaToVelocity 
 } from '../utils/unifiedVelocityEngine';
+import { durationToVelocity } from '../utils/velocityMapper';
 
 export function useTouchVelocity() {
   const settings = useSettingsStore();
@@ -49,9 +50,8 @@ export function useTouchVelocity() {
 
     const duration = performance.now() - startTime;
     
-    // Simple duration to velocity mapping (shorter = faster/harder)
-    // This is a placeholder for a more complex duration engine if needed
-    const durationVelocity = Math.max(1, Math.min(127, Math.round(127 * (1 - Math.min(duration / 300, 1)))));
+    // Use the new human-biased duration to velocity mapping
+    const durationVelocity = durationToVelocity(duration, settings);
 
     if (pendingAreaVelocity.current.has(event.pointerId)) {
       const areaVel = pendingAreaVelocity.current.get(event.pointerId)!;
@@ -62,7 +62,7 @@ export function useTouchVelocity() {
     } else {
       setLastVelocity(durationVelocity);
     }
-  }, [pressStartTimes, setLastVelocity]);
+  }, [pressStartTimes, setLastVelocity, settings]);
 
   return { calculateVelocity, refineVelocity };
 }

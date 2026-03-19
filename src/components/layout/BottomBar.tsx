@@ -2,6 +2,8 @@ import { useKeyboardStore } from '../../store/keyboardStore';
 import { RefreshCw } from 'lucide-react';
 import { useMIDI } from '../../hooks/useMIDI';
 import { useLayout } from '../../hooks/useLayout';
+import { useMidiStore } from '../../store/midiStore';
+import { useState, useEffect } from 'react';
 
 export default function BottomBar() {
   const lastNote = useKeyboardStore((state) => state.lastNote);
@@ -11,6 +13,16 @@ export default function BottomBar() {
   const clearActiveKeys = useKeyboardStore((state) => state.clearActiveKeys);
   const { sendControlChange, sendAllNotesOff } = useMIDI();
   const layout = useLayout();
+  const messagesSent = useMidiStore((state) => state.messagesSent);
+  const [showMidiIndicator, setShowMidiIndicator] = useState(false);
+
+  useEffect(() => {
+    if (messagesSent > 0) {
+      setShowMidiIndicator(true);
+      const timer = setTimeout(() => setShowMidiIndicator(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [messagesSent]);
 
   const handleReset = () => {
     sendAllNotesOff();
@@ -50,12 +62,17 @@ export default function BottomBar() {
   );
 
   const IntensityBar = () => (
-    <div className="flex-1 flex flex-col justify-center">
+    <div className="flex-1 flex flex-col justify-center relative">
       <div className="flex justify-between items-end mb-1">
         <span className="text-[9px] uppercase tracking-[0.2em] text-[#666] font-black">
           {layout.isPhone ? 'INT' : 'Intensity'}
         </span>
-        <span className="text-[10px] font-black text-[#1D9E75] tracking-widest">{Math.round((lastVelocity / 127) * 100)}%</span>
+        <div className="flex items-center gap-2">
+          {showMidiIndicator && (
+            <span className="text-[10px] font-black text-[#1D9E75] animate-pulse">MIDI ✓</span>
+          )}
+          <span className="text-[10px] font-black text-[#1D9E75] tracking-widest">{Math.round((lastVelocity / 127) * 100)}%</span>
+        </div>
       </div>
       <div className="h-2 bg-[#141414] rounded-full overflow-hidden border border-[#2e2e2e]">
         <div 

@@ -15,6 +15,7 @@ export function useMIDI() {
 
   const sendRaw = (data: number[]) => {
     if (connectionMode === 'webmidi' && selectedOutput) {
+      console.log('MIDI OUT:', data[0], data[1], data[2]);
       selectedOutput.send(data);
     } else if (connectionMode === 'wifi') {
       // The server expects { type: 'midi', data: [...] }

@@ -5,6 +5,7 @@ import { Settings, Share2, Zap } from 'lucide-react';
 
 export default function Header() {
   const connectionMode = useMidiStore((state) => state.connectionMode);
+  const connectionStatus = useMidiStore((state) => state.connectionStatus);
   const wifiStatus = useMidiStore((state) => state.wifiStatus);
   const usbDevice = useMidiStore((state) => state.usbDevice);
 
@@ -12,21 +13,52 @@ export default function Header() {
 
   const getStatusBadge = () => {
     let label = 'Web MIDI';
+    let color = '#1D9E75'; // green
     let isActive = true;
 
-    if (connectionMode === 'wifi') {
+    if (connectionMode === 'webmidi') {
+      if (connectionStatus === 'connected') {
+        label = 'Web MIDI';
+        color = '#1D9E75';
+        isActive = true;
+      } else if (connectionStatus === 'no-devices') {
+        label = 'No Devices';
+        color = '#EF9F27'; // yellow
+        isActive = false;
+      } else if (connectionStatus === 'error') {
+        label = 'Error';
+        color = '#E24B4A'; // red
+        isActive = false;
+      } else {
+        label = 'Not Connected';
+        color = '#444'; // gray
+        isActive = false;
+      }
+    } else if (connectionMode === 'wifi') {
       label = 'WiFi MIDI';
       isActive = wifiStatus === 'connected';
+      color = isActive ? '#1D9E75' : '#444';
     } else if (connectionMode === 'usb') {
       label = 'USB MIDI';
       isActive = !!usbDevice;
+      color = isActive ? '#1D9E75' : '#444';
     }
     
     return (
-      <div className={`flex items-center gap-2 ${!layout.isPhone ? 'px-3 py-1 rounded-full border' : ''} ${isActive ? (!layout.isPhone ? 'bg-[#1D9E75]/10 border-[#1D9E75]/30 text-[#1D9E75]' : 'text-[#1D9E75]') : (!layout.isPhone ? 'bg-[#242424] border-[#2e2e2e] text-[#888]' : 'text-[#444]')}`}>
+      <div className={`flex items-center gap-2 ${!layout.isPhone ? 'px-3 py-1 rounded-full border' : ''}`} 
+           style={{ 
+             backgroundColor: !layout.isPhone ? `${color}10` : 'transparent',
+             borderColor: !layout.isPhone ? `${color}30` : 'transparent',
+             color: color
+           }}>
         <div 
-          className={`rounded-full ${isActive ? 'bg-[#1D9E75] shadow-[0_0_8px_rgba(29,158,117,0.5)]' : 'bg-[#444]'}`} 
-          style={{ width: '8px', height: '8px' }}
+          className="rounded-full" 
+          style={{ 
+            width: '8px', 
+            height: '8px',
+            backgroundColor: color,
+            boxShadow: isActive ? `0 0 8px ${color}80` : 'none'
+          }}
         />
         {!layout.isPhone && <span className="text-[10px] font-bold uppercase tracking-widest">{label}</span>}
       </div>

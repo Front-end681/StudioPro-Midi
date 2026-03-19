@@ -55,12 +55,12 @@ export default function SettingsPage() {
   };
 
   const presets = {
-    soft: { curve: 0.5, min: 0.01, max: 0.8 },
-    normal: { curve: 0.65, min: 0.02, max: 1.2 },
-    hard: { curve: 0.85, min: 0.05, max: 1.8 },
+    precise: { curve: 0.5, min: 0.01, max: 0.8 },
+    natural: { curve: 0.65, min: 0.02, max: 1.2 },
+    expressive: { curve: 0.85, min: 0.05, max: 1.8 },
   };
 
-  const applyPreset = (name: 'soft' | 'normal' | 'hard') => {
+  const applyPreset = (name: 'precise' | 'natural' | 'expressive') => {
     const p = presets[name];
     updateSetting('velocityPreset', name);
     updateSetting('velocitySensitivity', p.curve);
@@ -174,9 +174,9 @@ export default function SettingsPage() {
         {/* 2. VELOCITY ENGINE */}
         <section className="bg-[#141414] rounded-2xl border border-[#2e2e2e] p-5 sm:p-8 space-y-8">
           <div className={`flex ${layout.isPhone ? 'flex-col gap-4' : 'items-center justify-between'}`}>
-            <h2 className="font-medium tracking-[0.08em] uppercase text-[#666]" style={{ fontSize: 'var(--font-xs)' }}>Velocity Engine</h2>
+            <h2 className="font-medium tracking-[0.08em] uppercase text-[#666]" style={{ fontSize: 'var(--font-xs)' }}>Playing Style</h2>
             <div className="flex bg-[#0A0A0A] p-1 rounded-xl border border-[#2e2e2e]">
-              {['soft', 'normal', 'hard'].map((p) => (
+              {['precise', 'natural', 'expressive'].map((p) => (
                 <button
                   key={p}
                   onClick={() => applyPreset(p as any)}

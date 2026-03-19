@@ -37,10 +37,24 @@ export default function ConnectionPage() {
   };
 
   const isWebMIDISupported = !!navigator.requestMIDIAccess;
+  const isWebUSBSupported = !!(navigator as any).usb;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar" style={{ padding: layout.isPhone ? '1rem' : '2rem' }}>
       <div className="max-w-2xl mx-auto pb-24">
+        {isIOS && (
+          <div className="bg-[#EF9F27]/10 border border-[#EF9F27]/30 rounded-xl p-4 mb-6 flex items-start gap-4">
+            <AlertCircle className="text-[#EF9F27] flex-shrink-0" size={20} />
+            <div>
+              <p className="font-bold text-[#EF9F27]" style={{ fontSize: 'var(--font-sm)' }}>iOS Limitation</p>
+              <p className="text-[#EF9F27]/80 mt-1" style={{ fontSize: 'var(--font-xs)' }}>
+                Web MIDI and WebUSB are not supported on iOS browsers. Please use a desktop computer or an Android device for hardware connection.
+              </p>
+            </div>
+          </div>
+        )}
+        
         <div className="flex items-center gap-4 mb-8">
           <Link to="/" className="p-2.5 bg-[#141414] hover:bg-[#1a1a1a] rounded-xl transition-colors text-[#666] hover:text-[#1D9E75] border border-[#2e2e2e]">
             <ArrowLeft size={20} />
@@ -147,64 +161,73 @@ export default function ConnectionPage() {
 
           {activeTab === 'usb' && (
             <div className="space-y-6">
-              <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-12 text-center space-y-6">
-                {usbDevice ? (
-                  <div className="space-y-6">
-                    <div className="w-16 h-16 bg-[#1D9E75]/10 rounded-full flex items-center justify-center mx-auto border border-[#1D9E75]/30">
-                      <Usb size={32} className="text-[#1D9E75]" />
-                    </div>
-                    <div>
-                      <p className="font-bold" style={{ fontSize: 'var(--font-lg)' }}>{usbDevice.productName || 'USB MIDI Device'}</p>
-                      <div className="flex items-center justify-center gap-4 mt-2">
-                        <div className="text-[#888] uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>VID: <span className="text-[#f0f0f0]">{usbDevice.vendorId}</span></div>
-                        <div className="text-[#888] uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>PID: <span className="text-[#f0f0f0]">{usbDevice.productId}</span></div>
-                      </div>
-                      <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-[#1D9E75]/20 rounded-full border border-[#1D9E75]/30">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#1D9E75]" />
-                        <span className="font-bold text-[#1D9E75] uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>Connected</span>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={disconnectUSB}
-                      className="px-8 py-3 bg-[#E24B4A]/10 border border-[#E24B4A]/30 text-[#E24B4A] font-bold uppercase tracking-widest rounded-xl hover:bg-[#E24B4A]/20 transition-all"
-                      style={{ fontSize: 'var(--font-xs)' }}
-                    >
-                      Disconnect Device
-                    </button>
+              {!isWebUSBSupported ? (
+                <div className="bg-[#E24B4A]/10 border border-[#E24B4A]/30 rounded-xl p-6 flex items-start gap-4">
+                  <AlertCircle className="text-[#E24B4A] flex-shrink-0" size={20} />
+                  <div>
+                    <p className="font-bold text-[#E24B4A]" style={{ fontSize: 'var(--font-sm)' }}>WebUSB not supported</p>
+                    <p className="text-[#E24B4A]/80 mt-1" style={{ fontSize: 'var(--font-xs)' }}>WebUSB is not supported in this browser. Please use Chrome or Edge.</p>
                   </div>
-                ) : (
-                  <>
-                    <div className="w-16 h-16 bg-[#242424] rounded-full flex items-center justify-center mx-auto border border-[#2e2e2e]">
-                      <Usb size={32} className="text-[#444]" />
-                    </div>
-                    <div className="space-y-2">
-                      <p className="font-bold" style={{ fontSize: 'var(--font-sm)' }}>No USB Device Connected</p>
-                      <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#2e2e2e] rounded-full">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#888]" />
-                        <span className="font-bold text-[#888] uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>Not Connected</span>
+                </div>
+              ) : (
+                <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-12 text-center space-y-6">
+                  {usbDevice ? (
+                    <div className="space-y-6">
+                      <div className="w-16 h-16 bg-[#1D9E75]/10 rounded-full flex items-center justify-center mx-auto border border-[#1D9E75]/30">
+                        <Usb size={32} className="text-[#1D9E75]" />
                       </div>
-                    </div>
-                    
-                    {usbError && (
-                      <div className="flex items-center gap-2 justify-center text-[#E24B4A] bg-[#E24B4A]/10 p-3 rounded-lg border border-[#E24B4A]/20" style={{ fontSize: 'var(--font-xs)' }}>
-                        <AlertCircle size={14} />
-                        <span>{usbError}</span>
+                      <div>
+                        <p className="font-bold" style={{ fontSize: 'var(--font-lg)' }}>{usbDevice.productName || 'USB MIDI Device'}</p>
+                        <div className="flex items-center justify-center gap-4 mt-2">
+                          <div className="text-[#888] uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>VID: <span className="text-[#f0f0f0]">{usbDevice.vendorId}</span></div>
+                          <div className="text-[#888] uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>PID: <span className="text-[#f0f0f0]">{usbDevice.productId}</span></div>
+                        </div>
+                        <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-[#1D9E75]/20 rounded-full border border-[#1D9E75]/30">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#1D9E75]" />
+                          <span className="font-bold text-[#1D9E75] uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>Connected</span>
+                        </div>
                       </div>
-                    )}
-                    
-                    <button 
-                      onClick={() => {
-                        connectUSB();
-                        setConnectionMode('usb');
-                      }}
-                      className="w-full py-4 bg-[#1D9E75] text-white font-bold uppercase tracking-widest rounded-xl shadow-[0_0_20px_rgba(29,158,117,0.2)] active:scale-95 transition-all"
-                      style={{ fontSize: 'var(--font-xs)' }}
-                    >
-                      Connect USB Device
-                    </button>
-                  </>
-                )}
-              </div>
+                      <button 
+                        onClick={disconnectUSB}
+                        className="px-8 py-3 bg-[#E24B4A]/10 border border-[#E24B4A]/30 text-[#E24B4A] font-bold uppercase tracking-widest rounded-xl hover:bg-[#E24B4A]/20 transition-all"
+                        style={{ fontSize: 'var(--font-xs)' }}
+                      >
+                        Disconnect Device
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-16 h-16 bg-[#242424] rounded-full flex items-center justify-center mx-auto border border-[#2e2e2e]">
+                        <Usb size={32} className="text-[#444]" />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="font-bold" style={{ fontSize: 'var(--font-sm)' }}>No USB Device Connected</p>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#2e2e2e] rounded-full">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#888]" />
+                          <span className="font-bold text-[#888] uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>Not Connected</span>
+                        </div>
+                      </div>
+                      
+                      {usbError && (
+                        <div className="flex items-center gap-2 justify-center text-[#E24B4A] bg-[#E24B4A]/10 p-3 rounded-lg border border-[#E24B4A]/20" style={{ fontSize: 'var(--font-xs)' }}>
+                          <AlertCircle size={14} />
+                          <span>{usbError}</span>
+                        </div>
+                      )}
+                      
+                      <button 
+                        onClick={() => {
+                          connectUSB();
+                        }}
+                        className="w-full py-4 bg-[#1D9E75] text-white font-bold uppercase tracking-widest rounded-xl shadow-[0_0_20px_rgba(29,158,117,0.2)] active:scale-95 transition-all"
+                        style={{ fontSize: 'var(--font-xs)' }}
+                      >
+                        Connect USB Device
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
               
               <div className="bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-6 flex items-start gap-4">
                 <AlertCircle className="text-[#888] flex-shrink-0" size={18} />
@@ -298,6 +321,12 @@ export default function ConnectionPage() {
                   <h3 className="uppercase tracking-[0.2em] text-[#f0f0f0] font-bold" style={{ fontSize: 'var(--font-xs)' }}>Setup Instructions</h3>
                 </div>
                 <div className="p-6 space-y-4">
+                  <div className="bg-[#EF9F27]/10 border border-[#EF9F27]/30 rounded-lg p-3 flex items-start gap-3">
+                    <AlertCircle className="text-[#EF9F27] flex-shrink-0" size={14} />
+                    <p className="text-[#EF9F27] leading-tight" style={{ fontSize: 'var(--font-xs)' }}>
+                      Note: If using HTTPS, your browser may block connections to local IP addresses. Try using the development URL if connection fails.
+                    </p>
+                  </div>
                   <ol className="space-y-3">
                     {[
                       'Install Node.js on your computer',
@@ -341,6 +370,30 @@ export default function ConnectionPage() {
                connectionMode === 'usb' ? usbDevice?.productName || 'None' :
                connectionMode === 'wifi' ? wifiIP || 'None' : 'None'}
             </span>
+          </div>
+        </div>
+
+        <div className="mt-12 bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] p-6">
+          <h3 className="uppercase tracking-[0.2em] text-[#f0f0f0] font-bold mb-4" style={{ fontSize: 'var(--font-xs)' }}>Troubleshooting</h3>
+          <div className="space-y-4">
+            <div className="flex gap-3">
+              <AlertCircle size={14} className="text-[#1D9E75] flex-shrink-0 mt-0.5" />
+              <p className="text-[#888]" style={{ fontSize: 'var(--font-xs)' }}>
+                <span className="text-[#f0f0f0] font-bold">Device not showing?</span> Try unplugging and replugging your MIDI device, then click "Refresh Device List".
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <AlertCircle size={14} className="text-[#1D9E75] flex-shrink-0 mt-0.5" />
+              <p className="text-[#888]" style={{ fontSize: 'var(--font-xs)' }}>
+                <span className="text-[#f0f0f0] font-bold">"Not Connected" status?</span> Make sure you click the "Connect" button and select your device in the browser popup.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <AlertCircle size={14} className="text-[#1D9E75] flex-shrink-0 mt-0.5" />
+              <p className="text-[#888]" style={{ fontSize: 'var(--font-xs)' }}>
+                <span className="text-[#f0f0f0] font-bold">Browser Support:</span> Use Google Chrome or Microsoft Edge. Safari and Firefox have limited support for MIDI/USB.
+              </p>
+            </div>
           </div>
         </div>
       </div>

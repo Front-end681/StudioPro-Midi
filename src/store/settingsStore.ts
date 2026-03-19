@@ -15,7 +15,7 @@ export const useSettingsStore = create<SettingsActions>()(
       showOctaveNumbers: true,
       keyWidth: 'normal',
       velocityCurve: 'linear',
-      velocityPreset: 'normal',
+      velocityPreset: 'natural',
       minSpeed: 0.02,
       maxSpeed: 1.2,
       velocitySensitivity: 0.65,

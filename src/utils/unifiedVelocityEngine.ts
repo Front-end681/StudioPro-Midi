@@ -3,6 +3,60 @@ import { applyFreqCompensation } from './frequencyWeight';
 import { adaptiveCalibrator } from './adaptiveCalibrator';
 import { melodicIntelligence } from './melodicIntelligence';
 
+class MusicalContext {
+  private recentVelocities: number[] = []
+  private readonly WINDOW = 8
+  
+  getAnchor(defaultCenter: number): number {
+    if (this.recentVelocities.length === 0) return defaultCenter;
+    const sum = this.recentVelocities.reduce((a,b) => a+b)
+    return Math.round(sum / this.recentVelocities.length)
+  }
+  
+  record(velocity: number): void {
+    this.recentVelocities.push(velocity)
+    if (this.recentVelocities.length > this.WINDOW) {
+      this.recentVelocities.shift()
+    }
+  }
+  
+  // Pull new velocity toward recent average
+  // This prevents sudden extreme changes
+  smooth(newVelocity: number, amount: number, defaultCenter: number): number {
+    const anchor = this.getAnchor(defaultCenter)
+    return Math.round(
+      newVelocity * (1 - amount) + anchor * amount
+    )
+  }
+}
+
+export const musicalContext = new MusicalContext();
+
+let previousVelocity = 75;
+
+const PRESETS = {
+  precise: { maxJump: 20, smooth: 0.35, center: 72 },
+  natural: { maxJump: 35, smooth: 0.25, center: 75 },
+  expressive: { maxJump: 50, smooth: 0.15, center: 78 },
+  custom: { maxJump: 35, smooth: 0.25, center: 75 }
+};
+
+function filterVelocity(
+  newVelocity: number,
+  previous: number,
+  maxJump: number
+): number {
+  const diff = newVelocity - previous
+  
+  if (Math.abs(diff) > maxJump) {
+    // Limit the jump
+    const direction = diff > 0 ? 1 : -1
+    return previous + (direction * maxJump)
+  }
+  
+  return newVelocity
+}
+
 export interface VelocityTracker {
   getHistory(ms: number): { y: number; t: number }[];
 }
@@ -203,9 +257,29 @@ export function calculateFinalVelocity(
   // ── STAGE 3: Curve + map to velocity ─────────────
 
   const curved = applyCurve(finalSignal, settings.velocityCurve);
-  const rawVelocity = Math.round(
-    settings.minVelocity + 
-    curved * (settings.maxVelocity - settings.minVelocity)
+  
+  // Map to HUMAN velocity curve (biased toward middle range)
+  const preset = PRESETS[settings.velocityPreset] || PRESETS.natural;
+  const CENTER_VELOCITY = preset.center;
+  const CENTER_NORMALIZED = 0.5;
+  
+  let velocity: number;
+  
+  if (curved >= CENTER_NORMALIZED) {
+    // Upper half: center → max
+    const ratio = (curved - CENTER_NORMALIZED) / (1.0 - CENTER_NORMALIZED);
+    const eased = Math.pow(ratio, 1.8);
+    velocity = CENTER_VELOCITY + eased * (settings.maxVelocity - CENTER_VELOCITY);
+  } else {
+    // Lower half: center → min
+    const ratio = (CENTER_NORMALIZED - curved) / CENTER_NORMALIZED;
+    const eased = Math.pow(ratio, 1.8);
+    velocity = CENTER_VELOCITY - eased * (CENTER_VELOCITY - settings.minVelocity);
+  }
+
+  const rawVelocity = Math.max(
+    settings.minVelocity, 
+    Math.min(settings.maxVelocity, Math.round(velocity))
   );
 
   // ── STAGE 4: Frequency compensation ──────────────
@@ -224,8 +298,18 @@ export function calculateFinalVelocity(
     ? melodicIntelligence.analyze(midiNote, freqCompensated, settings.melodicStrength)
     : freqCompensated;
 
-  // Record this note in history
-  melodicIntelligence.record(midiNote, finalVelocity);
+  // ── STAGE 6: Anti-Extremes Filter ────────────────
+  
+  const filtered = filterVelocity(finalVelocity, previousVelocity, preset.maxJump);
+  previousVelocity = filtered;
 
-  return Math.max(1, Math.min(127, Math.round(finalVelocity)));
+  // ── STAGE 7: Musical Context Smoothing ───────────
+  
+  const anchored = musicalContext.smooth(filtered, preset.smooth, preset.center);
+  musicalContext.record(anchored);
+
+  // Record this note in history for melodic intelligence
+  melodicIntelligence.record(midiNote, anchored);
+
+  return Math.max(1, Math.min(127, Math.round(anchored)));
 }

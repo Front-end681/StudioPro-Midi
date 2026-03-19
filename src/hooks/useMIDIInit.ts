@@ -7,6 +7,7 @@ export function useMIDIInit() {
   const setSelectedOutput = useMidiStore((state) => state.setSelectedOutput);
   const setMidiError = useMidiStore((state) => state.setMidiError);
   const setDeviceCapabilities = useMidiStore((state) => state.setDeviceCapabilities);
+  const setConnectionStatus = useMidiStore((state) => state.setConnectionStatus);
 
   useEffect(() => {
     // Detect capabilities
@@ -31,18 +32,24 @@ export function useMIDIInit() {
 
     if (!navigator.requestMIDIAccess) {
       setMidiError('Web MIDI not supported in this browser.');
+      setConnectionStatus('error');
       return;
     }
 
-    navigator.requestMIDIAccess().then((access) => {
+    navigator.requestMIDIAccess({ sysex: false }).then((access) => {
       const updateOutputs = () => {
         const outputs = Array.from(access.outputs.values());
         setMidiOutputs(outputs);
         
-        // Auto-select first if none selected
-        const currentSelected = useMidiStore.getState().selectedOutput;
-        if (!currentSelected && outputs.length > 0) {
-          setSelectedOutput(outputs[0]);
+        if (outputs.length > 0) {
+          // Auto-select first if none selected
+          const currentSelected = useMidiStore.getState().selectedOutput;
+          if (!currentSelected) {
+            setSelectedOutput(outputs[0]);
+          }
+          setConnectionStatus('connected');
+        } else {
+          setConnectionStatus('no-devices');
         }
       };
 
@@ -50,6 +57,7 @@ export function useMIDIInit() {
       updateOutputs();
     }).catch((err) => {
       setMidiError('Failed to access MIDI: ' + err.message);
+      setConnectionStatus('error');
     });
-  }, [setMidiOutputs, setSelectedOutput, setMidiError]);
+  }, [setMidiOutputs, setSelectedOutput, setMidiError, setConnectionStatus, setDeviceCapabilities]);
 }

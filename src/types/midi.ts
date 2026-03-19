@@ -24,7 +24,7 @@ export interface SettingsState {
   showOctaveNumbers: boolean;
   keyWidth: 'narrow' | 'normal' | 'wide';
   velocityCurve: VelocityCurve;
-  velocityPreset: 'soft' | 'normal' | 'hard' | 'custom';
+  velocityPreset: 'precise' | 'natural' | 'expressive' | 'custom';
   minSpeed: number;
   maxSpeed: number;
   velocitySensitivity: number;
