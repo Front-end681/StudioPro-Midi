@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Header from './Header';
 import BottomBar from './BottomBar';
@@ -6,7 +6,9 @@ import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { useMIDIInit } from '../../hooks/useMIDIInit';
 import { useMIDI } from '../../hooks/useMIDI';
 import { useKeyboardStore } from '../../store/keyboardStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import MIDIConnectionManager from '../midi/MIDIConnectionManager';
+import { CalibrationWizard } from '../calibration/CalibrationWizard';
 
 import { useLayout } from '../../hooks/useLayout';
 
@@ -16,6 +18,15 @@ export default function AppShell() {
   useMIDIInit();
   const { sendAllNotesOff } = useMIDI();
   const clearActiveKeys = useKeyboardStore((state) => state.clearActiveKeys);
+  const isCalibrated = useSettingsStore((state) => state.isCalibrated);
+  const [showWizard, setShowWizard] = useState(false);
+
+  useEffect(() => {
+    // Show wizard on first launch if not calibrated
+    if (!isCalibrated) {
+      setShowWizard(true);
+    }
+  }, [isCalibrated]);
 
   useEffect(() => {
     const handleLayoutChange = () => {
@@ -40,6 +51,7 @@ export default function AppShell() {
         <Outlet />
       </main>
       <BottomBar />
+      {showWizard && <CalibrationWizard onClose={() => setShowWizard(false)} />}
     </div>
   );
 }

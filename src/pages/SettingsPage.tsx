@@ -61,11 +61,10 @@ export default function SettingsPage() {
   };
 
   const applyPreset = (name: 'precise' | 'natural' | 'expressive') => {
-    const p = presets[name];
     updateSetting('velocityPreset', name);
-    updateSetting('velocitySensitivity', p.curve);
-    updateSetting('minSpeed', p.min);
-    updateSetting('maxSpeed', p.max);
+    if (name === 'precise') updateSetting('velocitySensitivityPreset', 'heavy');
+    else if (name === 'natural') updateSetting('velocitySensitivityPreset', 'normal');
+    else if (name === 'expressive') updateSetting('velocitySensitivityPreset', 'light');
   };
 
   const accentColors = [
@@ -173,78 +172,61 @@ export default function SettingsPage() {
 
         {/* 2. VELOCITY ENGINE */}
         <section className="bg-[#141414] rounded-2xl border border-[#2e2e2e] p-5 sm:p-8 space-y-8">
-          <div className={`flex ${layout.isPhone ? 'flex-col gap-4' : 'items-center justify-between'}`}>
-            <h2 className="font-medium tracking-[0.08em] uppercase text-[#666]" style={{ fontSize: 'var(--font-xs)' }}>Playing Style</h2>
-            <div className="flex bg-[#0A0A0A] p-1 rounded-xl border border-[#2e2e2e]">
-              {['precise', 'natural', 'expressive'].map((p) => (
-                <button
-                  key={p}
-                  onClick={() => applyPreset(p as any)}
-                  className={`flex-1 px-4 py-2 font-black capitalize rounded-lg transition-all ${settings.velocityPreset === p ? 'bg-[#1D9E75] text-black shadow-lg' : 'text-[#666] hover:text-[#f0f0f0]'}`}
-                  style={{ fontSize: 'var(--font-xs)' }}
-                >
-                  {p}
-                </button>
-              ))}
+          <div className="space-y-2">
+            <h2 className="font-medium tracking-[0.08em] uppercase text-[#666]" style={{ fontSize: 'var(--font-xs)' }}>Velocity Sensitivity</h2>
+            <p className="text-[#444] italic" style={{ fontSize: 'var(--font-xs)' }}>Adjust how much force is needed for loud notes</p>
+          </div>
+
+          <div className="flex bg-[#0A0A0A] p-1.5 rounded-2xl border border-[#2e2e2e]">
+            {(['light', 'normal', 'heavy'] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => updateSetting('velocitySensitivityPreset', p)}
+                className={`flex-1 py-3 font-black capitalize rounded-xl transition-all ${settings.velocitySensitivityPreset === p ? 'bg-[#1D9E75] text-black shadow-lg' : 'text-[#666] hover:text-[#f0f0f0]'}`}
+                style={{ fontSize: 'var(--font-xs)' }}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-6 pt-4 border-t border-[#2e2e2e]">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-normal text-[#f0f0f0]" style={{ fontSize: 'var(--font-sm)' }}>Personal Calibration</h3>
+                <p className="text-[#666] mt-1" style={{ fontSize: 'var(--font-xs)' }}>
+                  {settings.isCalibrated ? "Calibrated to your touch" : "Not calibrated yet"}
+                </p>
+              </div>
+              <button 
+                onClick={() => updateSetting('isCalibrated', false)}
+                className="px-4 py-2 bg-[#1D9E75]/10 text-[#1D9E75] border border-[#1D9E75]/30 rounded-xl font-black uppercase tracking-widest hover:bg-[#1D9E75] hover:text-white transition-all"
+                style={{ fontSize: 'var(--font-xs)' }}
+              >
+                {settings.isCalibrated ? "Recalibrate" : "Start Wizard"}
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between pt-4 border-t border-[#2e2e2e]">
+              <div>
+                <h3 className="font-normal text-[#f0f0f0]" style={{ fontSize: 'var(--font-sm)' }}>Stability Filter</h3>
+                <p className="text-[#666] mt-1" style={{ fontSize: 'var(--font-xs)' }}>Prevents accidental velocity jumps</p>
+              </div>
+              <button 
+                onClick={() => updateSetting('stabilityFilterEnabled', !settings.stabilityFilterEnabled)}
+                className={`w-10 h-5 rounded-full relative transition-colors ${settings.stabilityFilterEnabled ? 'bg-[#1D9E75]' : 'bg-[#2e2e2e]'}`}
+              >
+                <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${settings.stabilityFilterEnabled ? 'left-6' : 'left-1'}`} />
+              </button>
             </div>
           </div>
 
-          <div className="h-40 sm:h-48 bg-[#0A0A0A] rounded-xl border border-[#2e2e2e] overflow-hidden relative">
-            <FreqCurveDisplay amount={settings.velocitySensitivity} />
-            <div className="absolute top-4 left-4 font-bold text-[#444] uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>Response Curve</div>
-          </div>
-
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <div className="flex justify-between font-black uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>
-                <span className="text-[#666]">Sensitivity (Curve)</span>
-                <span className="text-[#1D9E75]">{settings.velocitySensitivity.toFixed(2)}</span>
-              </div>
-              <input 
-                type="range" min="0.3" max="2.0" step="0.05" value={settings.velocitySensitivity}
-                onChange={(e) => {
-                  updateSetting('velocitySensitivity', parseFloat(e.target.value));
-                  updateSetting('velocityPreset', 'custom');
-                }}
-                className="w-full h-1.5 bg-[#0A0A0A] rounded-lg appearance-none cursor-pointer accent-[#1D9E75]"
-              />
-            </div>
-
+          <div className="pt-8 border-t border-[#2e2e2e] space-y-6">
+            <h3 className="font-normal text-[#f0f0f0]" style={{ fontSize: 'var(--font-sm)' }}>Output Range</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <div className="flex justify-between font-black uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>
-                  <span className="text-[#666]">Min Threshold</span>
-                  <span className="text-[#1D9E75]">{settings.minSpeed.toFixed(2)}</span>
-                </div>
-                <input 
-                  type="range" min="0.01" max="0.2" step="0.01" value={settings.minSpeed}
-                  onChange={(e) => {
-                    updateSetting('minSpeed', parseFloat(e.target.value));
-                    updateSetting('velocityPreset', 'custom');
-                  }}
-                  className="w-full h-1.5 bg-[#0A0A0A] rounded-lg appearance-none cursor-pointer accent-[#1D9E75]"
-                />
-              </div>
-              <div className="space-y-4">
-                <div className="flex justify-between font-black uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>
-                  <span className="text-[#666]">Max Threshold</span>
-                  <span className="text-[#1D9E75]">{settings.maxSpeed.toFixed(1)}</span>
-                </div>
-                <input 
-                  type="range" min="0.5" max="3.0" step="0.1" value={settings.maxSpeed}
-                  onChange={(e) => {
-                    updateSetting('maxSpeed', parseFloat(e.target.value));
-                    updateSetting('velocityPreset', 'custom');
-                  }}
-                  className="w-full h-1.5 bg-[#0A0A0A] rounded-lg appearance-none cursor-pointer accent-[#1D9E75]"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <div className="flex justify-between font-black uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>
-                  <span className="text-[#666]">Output Min</span>
+                  <span className="text-[#666]">Softest (Min)</span>
                   <span className="text-[#1D9E75]">{settings.minVelocity}</span>
                 </div>
                 <input 
@@ -255,7 +237,7 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-4">
                 <div className="flex justify-between font-black uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>
-                  <span className="text-[#666]">Output Max</span>
+                  <span className="text-[#666]">Loudest (Max)</span>
                   <span className="text-[#1D9E75]">{settings.maxVelocity}</span>
                 </div>
                 <input 
@@ -267,145 +249,13 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Melodic Intelligence */}
-          <div className="pt-8 border-t border-[#2e2e2e] space-y-6">
+          {/* Device Info */}
+          <div className="pt-8 border-t border-[#2e2e2e] space-y-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-normal text-[#f0f0f0]" style={{ fontSize: 'var(--font-sm)' }}>Melodic Intelligence</h3>
-                <p className="text-[#666] mt-1" style={{ fontSize: 'var(--font-xs)' }}>Natural crescendo on scales and runs</p>
-              </div>
-              <button 
-                onClick={() => updateSetting('melodicIntelligenceEnabled', !settings.melodicIntelligenceEnabled)}
-                className={`w-10 h-5 rounded-full relative transition-colors ${settings.melodicIntelligenceEnabled ? 'bg-[#1D9E75]' : 'bg-[#2e2e2e]'}`}
-              >
-                <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${settings.melodicIntelligenceEnabled ? 'left-6' : 'left-1'}`} />
-              </button>
-            </div>
-
-            {settings.melodicIntelligenceEnabled && (
-              <div className="space-y-4">
-                <div className="flex bg-[#0A0A0A] p-1 rounded-xl border border-[#2e2e2e]">
-                  {['subtle', 'natural', 'expressive'].map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => updateSetting('melodicStrength', s as any)}
-                      className={`flex-1 py-2 font-black capitalize rounded-lg transition-all ${settings.melodicStrength === s ? 'bg-[#1D9E75] text-black shadow-lg' : 'text-[#666] hover:text-[#f0f0f0]'}`}
-                      style={{ fontSize: 'var(--font-xs)' }}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[#444] italic" style={{ fontSize: 'var(--font-xs)' }}>
-                  {settings.melodicStrength === 'subtle' && "Barely noticeable musical correction."}
-                  {settings.melodicStrength === 'natural' && "Standard musical phrasing (±20 velocity)."}
-                  {settings.melodicStrength === 'expressive' && "Dramatic crescendo/diminuendo (±35 velocity)."}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Hardware Monitor (Inside Velocity Section) */}
-          <div className="pt-8 border-t border-[#2e2e2e] space-y-6">
-            <h3 className="font-normal text-[#f0f0f0]" style={{ fontSize: 'var(--font-sm)' }}>Hardware Capabilities</h3>
-            <div className="grid grid-cols-3 gap-3">
-              <div className={`flex flex-col items-center gap-3 p-4 rounded-xl border transition-all ${deviceCapabilities.touchInput ? 'bg-[#1D9E75]/5 border-[#1D9E75]/30 text-[#1D9E75]' : 'bg-[#0A0A0A] border-[#2e2e2e] text-[#444]'}`}>
-                <Smartphone size={18} />
-                <span className="font-black uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>Touch</span>
-              </div>
-              <div className={`flex flex-col items-center gap-3 p-4 rounded-xl border transition-all ${settings.pressureMode === 'pen' ? 'bg-[#1D9E75]/5 border-[#1D9E75]/30 text-[#1D9E75]' : 'bg-[#0A0A0A] border-[#2e2e2e] text-[#444]'}`}>
-                <Zap size={18} />
-                <span className="font-black uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>Pressure</span>
-              </div>
-              <div className={`flex flex-col items-center gap-3 p-4 rounded-xl border transition-all ${settings.pressureMode === 'area' ? 'bg-[#1D9E75]/5 border-[#1D9E75]/30 text-[#1D9E75]' : 'bg-[#0A0A0A] border-[#2e2e2e] text-[#444]'}`}>
-                <MousePointer size={18} />
-                <span className="font-black uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>Area</span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-[#0A0A0A] rounded-xl border border-[#2e2e2e]">
-              <div className="flex items-center justify-between">
-                <span className="text-[#666] font-bold uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>Active Method</span>
-                <span className="text-[#1D9E75] font-black uppercase" style={{ fontSize: 'var(--font-xs)' }}>
-                  {settings.pressureMode === 'pen' && "S Pen Real Pressure ⭐"}
-                  {settings.pressureMode === 'area' && "Contact Area + Duration"}
-                  {settings.pressureMode === 'duration' && "Tap Speed/Duration"}
-                </span>
-              </div>
-            </div>
-
-            {/* Finger Pressure Calibration */}
-            <div className="space-y-4 pt-4">
-              <div className="flex justify-between items-center">
-                <h4 className="font-bold text-[#f0f0f0]" style={{ fontSize: 'var(--font-xs)' }}>Finger Pressure Calibration</h4>
-                <button 
-                  onClick={() => {
-                    updateSetting('minContactArea', 100);
-                    updateSetting('maxContactArea', 1200);
-                  }}
-                  className="text-[#666] hover:text-[#1D9E75] font-bold uppercase tracking-widest"
-                  style={{ fontSize: '10px' }}
-                >
-                  Reset
-                </button>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div 
-                  className="h-24 bg-[#0A0A0A] border-2 border-dashed border-[#2e2e2e] rounded-xl flex flex-col items-center justify-center gap-2 hover:border-[#1D9E75]/50 transition-colors cursor-pointer active:bg-[#1D9E75]/5"
-                  onPointerDown={(e) => {
-                    if (e.pointerType === 'touch') {
-                      const area = e.width * e.height;
-                      if (area > 1) updateSetting('minContactArea', Math.round(area));
-                    }
-                  }}
-                >
-                  <span className="text-[#444] font-black uppercase text-center px-2" style={{ fontSize: '10px' }}>Press LIGHTLY here</span>
-                  <span className="text-[#1D9E75] font-mono text-xs">{settings.minContactArea}</span>
-                </div>
-                <div 
-                  className="h-24 bg-[#0A0A0A] border-2 border-dashed border-[#2e2e2e] rounded-xl flex flex-col items-center justify-center gap-2 hover:border-[#1D9E75]/50 transition-colors cursor-pointer active:bg-[#1D9E75]/5"
-                  onPointerDown={(e) => {
-                    if (e.pointerType === 'touch') {
-                      const area = e.width * e.height;
-                      if (area > 1) updateSetting('maxContactArea', Math.round(area));
-                    }
-                  }}
-                >
-                  <span className="text-[#444] font-black uppercase text-center px-2" style={{ fontSize: '10px' }}>Press HARD here</span>
-                  <span className="text-[#1D9E75] font-mono text-xs">{settings.maxContactArea}</span>
-                </div>
-              </div>
-              <p className="text-[#444] italic text-center" style={{ fontSize: 'var(--font-xs)' }}>
-                Range: {settings.minContactArea} → {settings.maxContactArea} sq units
-              </p>
-            </div>
-
-            <div className="space-y-4 pt-4 border-t border-[#2e2e2e]">
-              <div className="flex items-center justify-between">
-                <span className="font-normal text-[#f0f0f0]" style={{ fontSize: 'var(--font-sm)' }}>Adaptive Learning</span>
-                <button 
-                  onClick={() => updateSetting('adaptiveEnabled', !settings.adaptiveEnabled)}
-                  className={`w-10 h-5 rounded-full relative transition-colors ${settings.adaptiveEnabled ? 'bg-[#1D9E75]' : 'bg-[#2e2e2e]'}`}
-                >
-                  <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${settings.adaptiveEnabled ? 'left-6' : 'left-1'}`} />
-                </button>
-              </div>
-              
-              {settings.adaptiveEnabled && (
-                <div className="space-y-3 pt-2">
-                  <div className="flex justify-between font-black uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>
-                    <span className="text-[#1D9E75]">Profile Progress</span>
-                    <span className="text-[#666]">{Math.round(calibrationProfile.progress)}%</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-[#0A0A0A] rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-[#1D9E75] shadow-[0_0_10px_rgba(29,158,117,0.5)] transition-all duration-500"
-                      style={{ width: `${calibrationProfile.progress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
+              <span className="text-[#666] font-bold uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>Input Method</span>
+              <span className="text-[#1D9E75] font-black uppercase" style={{ fontSize: 'var(--font-xs)' }}>
+                {settings.pressureMode === 'pen' ? "S Pen Pressure" : "Tap Duration"}
+              </span>
             </div>
           </div>
         </section>

@@ -1,105 +1,131 @@
 import { useCallback } from 'react';
 import { useMidiStore } from '../store/midiStore';
+import { formatUSBMIDIPacket } from '../utils/midiUtils';
 
 export function useWebUSB() {
-  const { usbDevice, setUsbDevice, setUsbError, setConnectionMode } = useMidiStore();
+  const { 
+    usbDevice, 
+    setUsbDevice, 
+    setUsbStatus,
+    setUsbDeviceName,
+    setUsbError, 
+    setConnectionMode 
+  } = useMidiStore();
 
   const connectUSB = useCallback(async () => {
-    const nav = navigator as any;
-    if (!nav.usb) {
-      setUsbError('WebUSB not supported in this browser.');
+    const usb = (navigator as any).usb;
+    if (!usb) {
+      setUsbStatus('not_supported');
+      setUsbError('WebUSB not supported in this browser. Use Chrome or Edge.');
       return;
     }
 
     try {
-      const selectedDevice = await nav.usb.requestDevice({ filters: [] });
+      setUsbStatus('connecting');
       
-      if (!selectedDevice.opened) {
-        await selectedDevice.open();
+      // 1. Request device
+      const device = await usb.requestDevice({ filters: [] });
+
+      // 2. Open device
+      await device.open();
+
+      // 3. Select configuration (usually 1)
+      if (device.configuration === null) {
+        await device.selectConfiguration(1);
       }
-      
-      // Find MIDI interface (Class 1: Audio, Subclass 3: MIDI Streaming)
+
+      // 4. Find MIDI Interface and OUT Endpoint
       let midiInterface = null;
       let outEndpoint = null;
-      let midiConfigValue = 1;
-
-      for (const config of selectedDevice.configurations) {
-        for (const iface of config.interfaces) {
-          for (const alt of iface.alternates) {
-            if (alt.interfaceClass === 1 && alt.interfaceSubclass === 3) {
+      let alternateSetting = 0;
+ 
+      for (const configuration of device.configurations) {
+        for (const iface of configuration.interfaces) {
+          for (const alternate of iface.alternates) {
+            // MIDI Class: 0x01, Subclass: 0x03
+            if (alternate.interfaceClass === 0x01 && alternate.interfaceSubclass === 0x03) {
               midiInterface = iface;
-              midiConfigValue = config.configurationValue;
-              for (const endpoint of alt.endpoints) {
+              alternateSetting = alternate.alternateSetting;
+              for (const endpoint of alternate.endpoints) {
                 if (endpoint.direction === 'out') {
                   outEndpoint = endpoint;
                   break;
                 }
               }
             }
-            if (midiInterface && outEndpoint) break;
+            if (outEndpoint) break;
           }
-          if (midiInterface && outEndpoint) break;
+          if (outEndpoint) break;
         }
-        if (midiInterface && outEndpoint) break;
+        if (outEndpoint) break;
       }
-
-      if (midiInterface && outEndpoint) {
-        if (selectedDevice.configuration?.configurationValue !== midiConfigValue) {
-          await selectedDevice.selectConfiguration(midiConfigValue);
-        }
-        await selectedDevice.claimInterface(midiInterface.interfaceNumber);
-        (selectedDevice as any)._midiOutEndpoint = outEndpoint.endpointNumber;
-      } else {
-        // Fallback to interface 0, endpoint 1 if not found
-        if (selectedDevice.configuration === null) {
-          await selectedDevice.selectConfiguration(1);
-        }
-        try {
-          await selectedDevice.claimInterface(0);
-          (selectedDevice as any)._midiOutEndpoint = 1;
-        } catch (e) {
-          console.warn('Failed to claim interface 0, device might not be MIDI compliant');
+ 
+      // Fallback: If class/subclass not found, try to find any OUT endpoint
+      if (!outEndpoint) {
+        for (const iface of device.configuration!.interfaces) {
+          for (const alternate of iface.alternates) {
+            for (const endpoint of alternate.endpoints) {
+              if (endpoint.direction === 'out') {
+                midiInterface = iface;
+                alternateSetting = alternate.alternateSetting;
+                outEndpoint = endpoint;
+                break;
+              }
+            }
+            if (outEndpoint) break;
+          }
+          if (outEndpoint) break;
         }
       }
+ 
+      if (!midiInterface || !outEndpoint) {
+        throw new Error('No MIDI OUT endpoint found on this device.');
+      }
+ 
+      // 5. Claim interface
+      await device.claimInterface(midiInterface.interfaceNumber);
+      
+      // Select alternate interface if needed
+      if (alternateSetting !== 0) {
+        await device.selectAlternateInterface(midiInterface.interfaceNumber, alternateSetting);
+      }
+      
+      // Store endpoint number for sending
+      (device as any)._midiOutEndpoint = outEndpoint.endpointNumber;
 
-      setUsbDevice(selectedDevice);
+      setUsbDevice(device);
+      setUsbDeviceName(device.productName || 'Unknown MIDI Device');
+      setUsbStatus('connected');
       setUsbError(null);
       setConnectionMode('usb');
-    } catch (err) {
-      if (err instanceof Error && err.name === 'NotFoundError') {
-        // User cancelled the dialog, don't show as error
-        return;
-      }
-      setUsbError(err instanceof Error ? err.message : 'Failed to connect to USB device');
-      setConnectionMode('webmidi'); // Fallback to webmidi
+
+      // Listen for disconnect
+      (navigator as any).usb.addEventListener('disconnect', (event: any) => {
+        if (event.device === device) {
+          setUsbStatus('disconnected');
+          setUsbDeviceName(null);
+          setUsbDevice(null);
+        }
+      });
+
+    } catch (err: any) {
+      if (err.name === 'NotFoundError') return; // User cancelled
+      console.error('USB Connection Error:', err);
+      setUsbStatus('error');
+      setUsbError(err.message || 'Failed to connect to USB device');
     }
-  }, [setUsbDevice, setUsbError, setConnectionMode]);
+  }, [setUsbDevice, setUsbStatus, setUsbDeviceName, setUsbError, setConnectionMode]);
 
   const sendUSBMIDI = useCallback(async (data: number[]) => {
     if (!usbDevice || !usbDevice.opened) return;
-    
+
+    const packet = formatUSBMIDIPacket(data);
+
     try {
       const endpoint = (usbDevice as any)._midiOutEndpoint || 1;
-      const status = data[0] & 0xF0;
-      let cin = 0x09; // Default to Note On
-      
-      if (status === 0x80) cin = 0x08; // Note Off
-      else if (status === 0x90) cin = 0x09; // Note On
-      else if (status === 0xB0) cin = 0x0B; // Control Change
-      else if (status === 0xE0) cin = 0x0E; // Pitch Bend
-      
-      // USB MIDI 1.0 packets must be exactly 4 bytes
-      // Byte 0: (Cable Number << 4) | CIN
-      // Byte 1-3: MIDI data padded with 0
-      const packet = new Uint8Array(4);
-      packet[0] = (0 << 4) | cin; // Cable 0
-      packet[1] = data[0] || 0;
-      packet[2] = data[1] || 0;
-      packet[3] = data[2] || 0;
-      
       await usbDevice.transferOut(endpoint, packet);
     } catch (err) {
-      console.error('USB MIDI Transfer Error:', err);
+      console.error('USB Send Error:', err);
     }
   }, [usbDevice]);
 
@@ -107,16 +133,26 @@ export function useWebUSB() {
     if (usbDevice) {
       try {
         await usbDevice.close();
-      } catch (err) {
-        console.error('Error closing USB device:', err);
+      } catch (e) {
+        console.error('Error closing USB device:', e);
       }
       setUsbDevice(null);
+      setUsbDeviceName(null);
+      setUsbStatus('disconnected');
     }
-  }, [usbDevice, setUsbDevice]);
+  }, [usbDevice, setUsbDevice, setUsbDeviceName, setUsbStatus]);
+
+  const usbAllNotesOff = useCallback(async () => {
+    for (let ch = 0; ch < 16; ch++) {
+      await sendUSBMIDI([0xB0 + ch, 123, 0]); // All Notes Off
+      await sendUSBMIDI([0xB0 + ch, 64, 0]);  // Sustain Off
+    }
+  }, [sendUSBMIDI]);
 
   return {
     connectUSB,
     disconnectUSB,
-    sendUSBMIDI
+    sendUSBMIDI,
+    usbAllNotesOff
   };
 }

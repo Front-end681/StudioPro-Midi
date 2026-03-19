@@ -10,6 +10,7 @@ export interface MIDIEvent {
 }
 
 export type VelocityCurve = 'linear' | 'exponential' | 'logarithmic';
+export type VelocitySensitivityPreset = 'light' | 'normal' | 'heavy';
 
 export interface DeviceCapabilities {
   pressure: boolean;
@@ -25,10 +26,8 @@ export interface SettingsState {
   keyWidth: 'narrow' | 'normal' | 'wide';
   velocityCurve: VelocityCurve;
   velocityPreset: 'precise' | 'natural' | 'expressive' | 'custom';
-  minSpeed: number;
-  maxSpeed: number;
-  velocitySensitivity: number;
-  velocityWindow: number;
+  velocitySensitivityPreset: VelocitySensitivityPreset;
+  stabilityFilterEnabled: boolean;
   minVelocity: number;
   maxVelocity: number;
   midiChannel: number;
@@ -54,4 +53,8 @@ export interface SettingsState {
   pressureMode: 'pen' | 'area' | 'duration';
   minContactArea: number;
   maxContactArea: number;
+  isCalibrated: boolean;
+  softDuration: number;
+  hardDuration: number;
+  normalDuration: number;
 }

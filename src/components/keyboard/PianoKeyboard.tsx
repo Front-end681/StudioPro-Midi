@@ -32,10 +32,10 @@ export default function PianoKeyboard() {
     sendNoteOn(note, velocity);
   };
 
-  const handleRelease = (note: number) => {
+  const handleRelease = (note: number, velocity?: number) => {
     stopNote(note);
     sendNoteOff(note);
-    setNoteReleased(note);
+    setNoteReleased(note, velocity);
   };
 
   const octaves = Array.from({ length: layout.octaves }, (_, i) => baseOctave + i);

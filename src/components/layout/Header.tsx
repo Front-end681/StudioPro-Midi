@@ -7,61 +7,53 @@ export default function Header() {
   const connectionMode = useMidiStore((state) => state.connectionMode);
   const connectionStatus = useMidiStore((state) => state.connectionStatus);
   const wifiStatus = useMidiStore((state) => state.wifiStatus);
-  const usbDevice = useMidiStore((state) => state.usbDevice);
+  const usbStatus = useMidiStore((state) => state.usbStatus);
 
   const layout = useLayout();
 
   const getStatusBadge = () => {
-    let label = 'Web MIDI';
-    let color = '#1D9E75'; // green
-    let isActive = true;
+    let label = 'MIDI';
+    let color = '#444'; // default gray
+    let isActive = false;
 
     if (connectionMode === 'webmidi') {
+      label = 'Web MIDI';
       if (connectionStatus === 'connected') {
-        label = 'Web MIDI';
         color = '#1D9E75';
         isActive = true;
       } else if (connectionStatus === 'no-devices') {
-        label = 'No Devices';
-        color = '#EF9F27'; // yellow
-        isActive = false;
+        color = '#EF9F27';
       } else if (connectionStatus === 'error') {
-        label = 'Error';
-        color = '#E24B4A'; // red
-        isActive = false;
-      } else {
-        label = 'Not Connected';
-        color = '#444'; // gray
-        isActive = false;
+        color = '#E24B4A';
       }
     } else if (connectionMode === 'wifi') {
       label = 'WiFi MIDI';
       isActive = wifiStatus === 'connected';
-      color = isActive ? '#1D9E75' : '#444';
+      color = isActive ? '#1D9E75' : (wifiStatus === 'connecting' ? '#EF9F27' : '#444');
     } else if (connectionMode === 'usb') {
       label = 'USB MIDI';
-      isActive = !!usbDevice;
-      color = isActive ? '#1D9E75' : '#444';
+      isActive = usbStatus === 'connected';
+      color = isActive ? '#1D9E75' : (usbStatus === 'connecting' ? '#EF9F27' : '#444');
     }
     
     return (
-      <div className={`flex items-center gap-2 ${!layout.isPhone ? 'px-3 py-1 rounded-full border' : ''}`} 
-           style={{ 
-             backgroundColor: !layout.isPhone ? `${color}10` : 'transparent',
-             borderColor: !layout.isPhone ? `${color}30` : 'transparent',
-             color: color
-           }}>
+      <Link 
+        to="/connection"
+        className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-[#141414] transition-all border border-transparent hover:border-[#2e2e2e]"
+      >
         <div 
           className="rounded-full" 
           style={{ 
-            width: '8px', 
-            height: '8px',
+            width: '6px', 
+            height: '6px',
             backgroundColor: color,
             boxShadow: isActive ? `0 0 8px ${color}80` : 'none'
           }}
         />
-        {!layout.isPhone && <span className="text-[10px] font-bold uppercase tracking-widest">{label}</span>}
-      </div>
+        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: isActive ? '#f0f0f0' : '#666' }}>
+          {label}
+        </span>
+      </Link>
     );
   };
 

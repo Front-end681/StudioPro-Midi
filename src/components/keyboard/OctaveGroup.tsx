@@ -6,7 +6,7 @@ interface OctaveGroupProps {
   octave: number;
   activeKeys: Map<number, number>;
   onPress: (note: number, velocity: number) => void;
-  onRelease: (note: number) => void;
+  onRelease: (note: number, velocity?: number) => void;
   showLabels: boolean;
 }
 

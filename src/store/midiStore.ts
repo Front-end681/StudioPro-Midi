@@ -15,6 +15,8 @@ interface MIDIState {
   
   // USB state
   usbDevice: any | null;
+  usbStatus: 'disconnected' | 'connecting' | 'connected' | 'error' | 'not_supported';
+  usbDeviceName: string | null;
   usbError: string | null;
 
   // Device capabilities
@@ -30,6 +32,8 @@ interface MIDIState {
   setWifiStatus: (status: 'disconnected' | 'connecting' | 'connected' | 'error') => void;
   setWifiRetryCount: (count: number) => void;
   setUsbDevice: (device: any | null) => void;
+  setUsbStatus: (status: 'disconnected' | 'connecting' | 'connected' | 'error' | 'not_supported') => void;
+  setUsbDeviceName: (name: string | null) => void;
   setUsbError: (error: string | null) => void;
   setDeviceCapabilities: (caps: DeviceCapabilities) => void;
 }
@@ -45,6 +49,8 @@ export const useMidiStore = create<MIDIState>((set) => ({
   wifiStatus: 'disconnected',
   wifiRetryCount: 0,
   usbDevice: null,
+  usbStatus: 'disconnected',
+  usbDeviceName: null,
   usbError: null,
 
   deviceCapabilities: {
@@ -63,6 +69,8 @@ export const useMidiStore = create<MIDIState>((set) => ({
   setWifiStatus: (status) => set({ wifiStatus: status }),
   setWifiRetryCount: (count) => set({ wifiRetryCount: count }),
   setUsbDevice: (device) => set({ usbDevice: device }),
+  setUsbStatus: (status) => set({ usbStatus: status }),
+  setUsbDeviceName: (name) => set({ usbDeviceName: name }),
   setUsbError: (error) => set({ usbError: error }),
   setDeviceCapabilities: (caps) => set({ deviceCapabilities: caps }),
 }));

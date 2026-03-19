@@ -1,67 +1,65 @@
-import { SettingsState } from '../types/midi';
+import { SettingsState, VelocitySensitivityPreset } from '../types/midi';
+
+export const SENSITIVITY_PRESETS: Record<VelocitySensitivityPreset, { fastest: number; slowest: number }> = {
+  light: { fastest: 30, slowest: 400 },
+  normal: { fastest: 50, slowest: 600 },
+  heavy: { fastest: 80, slowest: 800 },
+};
 
 export function durationToVelocity(
   ms: number,
   settings: SettingsState
 ): number {
-  // Human tap duration ranges on glass:
-  // Very fast (intentional snap): 30–80ms
-  // Fast (normal tap):            80–180ms  
-  // Medium (deliberate press):    180–350ms
-  // Slow (gentle placement):      350–600ms
-  // Very slow:                    600ms+
+  // Use personal calibration if available
+  if (settings.isCalibrated) {
+    const { softDuration, hardDuration, normalDuration } = settings;
+    
+    let velocity: number;
+    if (ms <= hardDuration) {
+      // Hard to very hard
+      const t = ms / hardDuration;
+      velocity = Math.round(120 + (1 - t) * 7);  // 120–127
+    } else if (ms <= normalDuration) {
+      // Hard to normal
+      const t = (ms - hardDuration) / (normalDuration - hardDuration);
+      const s = t * t * (3 - 2 * t);  // S-curve
+      velocity = Math.round(120 - s * 45);  // 120→75
+    } else if (ms <= softDuration) {
+      // Normal to soft
+      const t = (ms - normalDuration) / (softDuration - normalDuration);
+      const s = t * t * (3 - 2 * t);  // S-curve
+      velocity = Math.round(75 - s * 60);  // 75→15
+    } else {
+      // Slower than your softest = minimum
+      velocity = 10;
+    }
 
-  // Map duration to normalized 0.0–1.0
-  // Using sigmoid-like curve for natural feel
-  
-  const FAST_END   = 80    // ms — anything faster = max
-  const SLOW_START = 500   // ms — anything slower = min
-  
-  let normalized: number;
-  
-  if (ms <= FAST_END) {
-    normalized = 1.0;
-  } else if (ms >= SLOW_START) {
-    normalized = 0.0;
-  } else {
-    // Smooth S-curve between fast and slow
-    const t = (ms - FAST_END) / (SLOW_START - FAST_END);
-    // S-curve: slow start, fast middle, slow end
-    normalized = 1 - (t * t * (3 - 2 * t));
+    return Math.max(1, Math.min(127, velocity));
   }
+
+  const preset = SENSITIVITY_PRESETS[settings.velocitySensitivityPreset] || SENSITIVITY_PRESETS.normal;
+  const FASTEST = preset.fastest;
+  const SLOWEST = preset.slowest;
+
+  // Clamp
+  const clamped = Math.max(FASTEST, Math.min(SLOWEST, ms));
+
+  // Normalize 0.0 (fast) to 1.0 (slow)
+  const t = (clamped - FASTEST) / (SLOWEST - FASTEST);
+
+  // S-curve: feels natural, avoids extremes
+  // Most taps (100-300ms) land in middle range
+  const s = t * t * (3 - 2 * t);
+
+  // Invert: fast = high velocity
+  const normalized = 1 - s;
+
+  // Map to minVelocity–maxVelocity (default 10–127)
+  const minV = settings.minVelocity;
+  const maxV = settings.maxVelocity;
+  const range = maxV - minV;
   
-  // Map to HUMAN velocity curve
-  // NOT linear — biased toward middle range
-  
-  // Center point: normalized 0.5 → velocity 75
-  // This means most normal taps land around 75
-  
-  const CENTER_VELOCITY = 75;
-  const CENTER_NORMALIZED = 0.5;
-  
-  let velocity: number;
-  
-  if (normalized >= CENTER_NORMALIZED) {
-    // Upper half: 75 → 127
-    const ratio = (normalized - CENTER_NORMALIZED) / 
-                  (1.0 - CENTER_NORMALIZED);
-    // Ease-in: hard to reach very high velocities
-    const eased = Math.pow(ratio, 1.8);
-    velocity = CENTER_VELOCITY + 
-               eased * (settings.maxVelocity - CENTER_VELOCITY);
-  } else {
-    // Lower half: 75 → minVelocity
-    const ratio = (CENTER_NORMALIZED - normalized) / 
-                  CENTER_NORMALIZED;
-    // Ease-in: hard to reach very low velocities
-    const eased = Math.pow(ratio, 1.8);
-    velocity = CENTER_VELOCITY - 
-               eased * (CENTER_VELOCITY - settings.minVelocity);
-  }
-  
-  return Math.max(
-    settings.minVelocity, 
-    Math.min(settings.maxVelocity, 
-    Math.round(velocity))
-  );
+  const velocity = minV + Math.round(normalized * range);
+
+  return Math.max(1, Math.min(127, velocity));
 }

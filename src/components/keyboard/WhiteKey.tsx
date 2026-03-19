@@ -13,7 +13,7 @@ interface WhiteKeyProps {
   note: number;
   isPressed: boolean;
   onPress: (note: number, velocity: number) => void;
-  onRelease: (note: number) => void;
+  onRelease: (note: number, velocity?: number) => void;
   showLabel: boolean;
 }
 
@@ -46,13 +46,13 @@ export default function WhiteKey({ note, isPressed, onPress, onRelease, showLabe
         onPress(note, velocity);
       }}
       onPointerUp={(e) => {
-        refineVelocity(e.nativeEvent, note);
-        onRelease(note);
+        const velocity = refineVelocity(e.nativeEvent, note);
+        onRelease(note, velocity);
       }}
       onPointerLeave={(e) => {
         if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-          refineVelocity(e.nativeEvent, note);
-          onRelease(note);
+          const velocity = refineVelocity(e.nativeEvent, note);
+          onRelease(note, velocity);
         }
       }}
     >

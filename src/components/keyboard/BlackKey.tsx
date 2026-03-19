@@ -11,7 +11,7 @@ interface BlackKeyProps {
   note: number;
   isPressed: boolean;
   onPress: (note: number, velocity: number) => void;
-  onRelease: (note: number) => void;
+  onRelease: (note: number, velocity?: number) => void;
 }
 
 export default function BlackKey({ note, isPressed, onPress, onRelease }: BlackKeyProps) {
@@ -41,13 +41,13 @@ export default function BlackKey({ note, isPressed, onPress, onRelease }: BlackK
       }}
       onPointerUp={(e) => {
         e.stopPropagation();
-        refineVelocity(e.nativeEvent, note);
-        onRelease(note);
+        const velocity = refineVelocity(e.nativeEvent, note);
+        onRelease(note, velocity);
       }}
       onPointerLeave={(e) => {
         if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-          refineVelocity(e.nativeEvent, note);
-          onRelease(note);
+          const velocity = refineVelocity(e.nativeEvent, note);
+          onRelease(note, velocity);
         }
       }}
     />

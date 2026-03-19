@@ -13,7 +13,7 @@ interface KeyboardState {
   setBaseOctave: (octave: number) => void;
   setNumOctaves: (num: number) => void;
   setNotePressed: (note: number, velocity: number) => void;
-  setNoteReleased: (note: number) => void;
+  setNoteReleased: (note: number, velocity?: number) => void;
   setPressStartTime: (note: number, time: number) => void;
   setSustain: (on: boolean) => void;
   setLastVelocity: (velocity: number) => void;
@@ -36,22 +36,36 @@ export const useKeyboardStore = create<KeyboardState>((set) => ({
   setNotePressed: (note, velocity) => set((state) => {
     const newActiveKeys = new Map(state.activeKeys);
     newActiveKeys.set(note, velocity);
+    const newPressStartTimes = new Map(state.pressStartTimes);
+    newPressStartTimes.set(note, performance.now());
     return { 
       activeKeys: newActiveKeys,
+      pressStartTimes: newPressStartTimes,
       lastNote: note,
       lastVelocity: velocity
     };
   }),
 
-  setNoteReleased: (note) => set((state) => {
+  setNoteReleased: (note, velocity?: number) => set((state) => {
     const newActiveKeys = new Map(state.activeKeys);
+    const newPressStartTimes = new Map(state.pressStartTimes);
+    newPressStartTimes.delete(note);
+
     if (state.isSustainOn) {
       const newSustained = new Set(state.sustainedKeys);
       newSustained.add(note);
-      return { sustainedKeys: newSustained };
+      return { 
+        sustainedKeys: newSustained, 
+        pressStartTimes: newPressStartTimes,
+        lastVelocity: velocity !== undefined ? velocity : state.lastVelocity 
+      };
     }
     newActiveKeys.delete(note);
-    return { activeKeys: newActiveKeys };
+    return { 
+      activeKeys: newActiveKeys, 
+      pressStartTimes: newPressStartTimes,
+      lastVelocity: velocity !== undefined ? velocity : state.lastVelocity
+    };
   }),
 
   setPressStartTime: (note, time) => set((state) => {

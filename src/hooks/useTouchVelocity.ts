@@ -1,67 +1,50 @@
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { useSettingsStore } from '../store/settingsStore';
 import { useKeyboardStore } from '../store/keyboardStore';
-import { velocityTracker } from '../services/velocityTracker';
 import { 
   calculateFinalVelocity, 
-  penPressureToVelocity, 
-  contactAreaToVelocity 
+  simpleVelocityEngine 
 } from '../utils/unifiedVelocityEngine';
 import { durationToVelocity } from '../utils/velocityMapper';
 
 export function useTouchVelocity() {
   const settings = useSettingsStore();
   const { setLastVelocity, pressStartTimes } = useKeyboardStore();
-  const pendingAreaVelocity = useRef<Map<number, number>>(new Map());
 
   const calculateVelocity = useCallback((event: PointerEvent, keyElement: HTMLElement, midiNote: number) => {
-    // ── DEVICE AUTO-DETECTION ────────────────────────
-    if (settings.pressureMode === 'duration') {
-      if (event.pointerType === 'pen' && event.pressure > 0 && event.pressure !== 0.5) {
-        settings.updateSetting('pressureMode', 'pen');
-      } else if (event.pointerType === 'touch' && event.width > 1 && event.height > 1) {
-        settings.updateSetting('pressureMode', 'area');
-      }
-    }
-
     // ── UNIFIED ENGINE ───────────────────────────────
-    const velocity = calculateFinalVelocity(
+    // This now returns a PREDICTED velocity for immediate note-on
+    return calculateFinalVelocity(
       event,
       keyElement,
       midiNote,
       settings,
-      velocityTracker
+      null // tracker no longer needed
     );
-
-    // Store area signal if available for later refinement
-    if (event.pointerType === 'touch' && event.width > 1 && event.height > 1) {
-      const areaVel = contactAreaToVelocity(event, settings);
-      if (areaVel !== null) {
-        pendingAreaVelocity.current.set(event.pointerId, areaVel);
-      }
-    }
-
-    return velocity;
   }, [settings]);
 
-  const refineVelocity = useCallback((event: PointerEvent, midiNote: number) => {
+  const refineVelocity = useCallback((_event: PointerEvent, midiNote: number) => {
     const startTime = pressStartTimes.get(midiNote);
     if (!startTime) return;
 
     const duration = performance.now() - startTime;
     
-    // Use the new human-biased duration to velocity mapping
-    const durationVelocity = durationToVelocity(duration, settings);
+    // 1. Record the actual duration to improve future predictions
+    simpleVelocityEngine.recordDuration(duration);
 
-    if (pendingAreaVelocity.current.has(event.pointerId)) {
-      const areaVel = pendingAreaVelocity.current.get(event.pointerId)!;
-      // Final: 55% area + 45% actual duration
-      const finalVelocity = Math.max(1, Math.min(127, Math.round(areaVel * 0.55 + durationVelocity * 0.45)));
-      setLastVelocity(finalVelocity);
-      pendingAreaVelocity.current.delete(event.pointerId);
-    } else {
-      setLastVelocity(durationVelocity);
-    }
+    // 2. Calculate the actual velocity based on this duration
+    const actualVelocity = durationToVelocity(duration, settings);
+
+    // 3. Apply stability filter to prevent wild jumps
+    const stabilizedVelocity = simpleVelocityEngine.stabilize(
+      actualVelocity, 
+      settings.stabilityFilterEnabled
+    );
+
+    // 4. Update the UI/Store with the final "true" velocity
+    setLastVelocity(stabilizedVelocity);
+    
+    return stabilizedVelocity;
   }, [pressStartTimes, setLastVelocity, settings]);
 
   return { calculateVelocity, refineVelocity };
