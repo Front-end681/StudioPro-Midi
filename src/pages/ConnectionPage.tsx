@@ -3,7 +3,7 @@ import { useMidiStore } from '../store/midiStore';
 import { useLayout } from '../hooks/useLayout';
 import { useSettingsStore } from '../store/settingsStore';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Usb, Wifi, Activity, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Usb, Wifi, Activity, AlertCircle, Volume2, VolumeX } from 'lucide-react';
 import { USBConnect } from '../components/connection/USBConnect';
 import { WiFiConfig } from '../components/connection/WiFiConfig';
 import { WebMIDIConnect } from '../components/connection/WebMIDIConnect';
@@ -18,7 +18,7 @@ export default function ConnectionPage() {
     usbDevice
   } = useMidiStore();
   
-  const { wifiIP } = useSettingsStore();
+  const { wifiIP, audioEnabled, updateSetting } = useSettingsStore();
   const layout = useLayout();
   const [isUsbModalOpen, setIsUsbModalOpen] = useState(false);
   const [isWifiModalOpen, setIsWifiModalOpen] = useState(false);
@@ -89,6 +89,27 @@ export default function ConnectionPage() {
           {activeTab === 'wifi' && (
             <WiFiConfig onShowInfo={() => setIsWifiModalOpen(true)} />
           )}
+        </div>
+
+        {/* Local Control Toggle */}
+        <div className="mt-8 p-4 bg-[#1a1a1a] rounded-xl border border-[#2e2e2e] flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${audioEnabled ? 'bg-[#1D9E75]/10 text-[#1D9E75]' : 'bg-red-500/10 text-red-500'}`}>
+              {audioEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            </div>
+            <div>
+              <p className="font-bold text-white" style={{ fontSize: 'var(--font-sm)' }}>Local Control</p>
+              <p className="text-[#666]" style={{ fontSize: 'var(--font-xs)' }}>
+                {audioEnabled ? 'Internal sound is ON' : 'Internal sound is MUTED (MIDI Only)'}
+              </p>
+            </div>
+          </div>
+          <button 
+            onClick={() => updateSetting('audioEnabled', !audioEnabled)}
+            className={`w-12 h-6 rounded-full relative transition-all ${audioEnabled ? 'bg-[#1D9E75]' : 'bg-[#444]'}`}
+          >
+            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${audioEnabled ? 'left-7' : 'left-1'}`} />
+          </button>
         </div>
 
         {/* Connection Stats */}

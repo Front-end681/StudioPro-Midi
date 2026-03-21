@@ -312,7 +312,10 @@ export default function SettingsPage() {
           <h2 className="font-medium tracking-[0.08em] uppercase text-[#666]" style={{ fontSize: 'var(--font-xs)' }}>Audio Engine</h2>
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <span className="font-normal text-[#f0f0f0]" style={{ fontSize: 'var(--font-sm)' }}>Internal Synth</span>
+              <div>
+                <span className="font-normal text-[#f0f0f0]" style={{ fontSize: 'var(--font-sm)' }}>Local Control</span>
+                <p className="text-[#666] mt-1" style={{ fontSize: 'var(--font-xs)' }}>Turn off to mute internal sound when using external software</p>
+              </div>
               <button 
                 onClick={() => updateSetting('audioEnabled', !settings.audioEnabled)}
                 className={`w-10 h-5 rounded-full relative transition-colors ${settings.audioEnabled ? 'bg-[#1D9E75]' : 'bg-[#2e2e2e]'}`}
