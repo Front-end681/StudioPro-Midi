@@ -6,30 +6,9 @@ export function useMIDIInit() {
   const setMidiOutputs = useMidiStore((state) => state.setMidiOutputs);
   const setSelectedOutput = useMidiStore((state) => state.setSelectedOutput);
   const setMidiError = useMidiStore((state) => state.setMidiError);
-  const setDeviceCapabilities = useMidiStore((state) => state.setDeviceCapabilities);
   const setConnectionStatus = useMidiStore((state) => state.setConnectionStatus);
 
   useEffect(() => {
-    // Detect capabilities
-    const testHandler = (e: PointerEvent) => {
-      if (e.pointerType === 'touch') {
-        setDeviceCapabilities({
-          touchInput: true,
-          pressure: e.pressure > 0 && e.pressure !== 0.5,
-          contactArea: (e.width > 1) || (e.height > 1)
-        });
-      } else {
-        setDeviceCapabilities({
-          touchInput: false,
-          pressure: false,
-          contactArea: false
-        });
-      }
-      document.removeEventListener('pointerdown', testHandler);
-    };
-    
-    document.addEventListener('pointerdown', testHandler, { once: true });
-
     if (!navigator.requestMIDIAccess) {
       setMidiError('Web MIDI not supported in this browser.');
       setConnectionStatus('error');
@@ -59,5 +38,5 @@ export function useMIDIInit() {
       setMidiError('Failed to access MIDI: ' + err.message);
       setConnectionStatus('error');
     });
-  }, [setMidiOutputs, setSelectedOutput, setMidiError, setConnectionStatus, setDeviceCapabilities]);
+  }, [setMidiOutputs, setSelectedOutput, setMidiError, setConnectionStatus]);
 }

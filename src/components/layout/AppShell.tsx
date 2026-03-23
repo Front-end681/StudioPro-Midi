@@ -8,7 +8,6 @@ import { useMIDI } from '../../hooks/useMIDI';
 import { useKeyboardStore } from '../../store/keyboardStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import MIDIConnectionManager from '../midi/MIDIConnectionManager';
-import { CalibrationWizard } from '../calibration/CalibrationWizard';
 
 import { useLayout } from '../../hooks/useLayout';
 
@@ -18,15 +17,6 @@ export default function AppShell() {
   useMIDIInit();
   const { sendAllNotesOff } = useMIDI();
   const clearActiveKeys = useKeyboardStore((state) => state.clearActiveKeys);
-  const isCalibrated = useSettingsStore((state) => state.isCalibrated);
-  const [showWizard, setShowWizard] = useState(false);
-
-  useEffect(() => {
-    // Show wizard on first launch if not calibrated
-    if (!isCalibrated) {
-      setShowWizard(true);
-    }
-  }, [isCalibrated]);
 
   useEffect(() => {
     const handleLayoutChange = () => {
@@ -51,7 +41,6 @@ export default function AppShell() {
         <Outlet />
       </main>
       <BottomBar />
-      {showWizard && <CalibrationWizard onClose={() => setShowWizard(false)} />}
     </div>
   );
 }

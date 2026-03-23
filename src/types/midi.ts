@@ -9,24 +9,12 @@ export interface MIDIEvent {
   msb?: number;
 }
 
-export type VelocityCurve = 'linear' | 'exponential' | 'logarithmic';
-export type VelocitySensitivityPreset = 'light' | 'normal' | 'heavy';
-
-export interface DeviceCapabilities {
-  pressure: boolean;
-  contactArea: boolean;
-  touchInput: boolean;
-}
-
 export interface SettingsState {
   numOctaves: number;
   defaultOctave: number;
   showNoteLabels: boolean;
   showOctaveNumbers: boolean;
   keyWidth: 'narrow' | 'normal' | 'wide';
-  velocityCurve: VelocityCurve;
-  velocityPreset: 'precise' | 'natural' | 'expressive' | 'custom';
-  velocitySensitivityPreset: VelocitySensitivityPreset;
   stabilityFilterEnabled: boolean;
   minVelocity: number;
   maxVelocity: number;
@@ -45,16 +33,5 @@ export interface SettingsState {
   wifiPort: number;
   autoReconnect: boolean;
   lastConnectionMode: string;
-  freqCompensationEnabled: boolean;
-  freqCompensationAmount: number;
-  adaptiveEnabled: boolean;
-  melodicIntelligenceEnabled: boolean;
-  melodicStrength: 'subtle' | 'natural' | 'expressive';
-  pressureMode: 'pen' | 'area' | 'duration';
-  minContactArea: number;
-  maxContactArea: number;
-  isCalibrated: boolean;
-  softDuration: number;
-  hardDuration: number;
-  normalDuration: number;
+  musicalStyle: 'classical' | 'jazz' | 'pop' | 'free';
 }

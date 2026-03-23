@@ -1,16 +1,10 @@
 import React, { useState } from 'react';
 import { useSettingsStore } from '../store/settingsStore';
 import { useKeyboardStore } from '../store/keyboardStore';
-import { useMidiStore } from '../store/midiStore';
-import { useTouchVelocity } from '../hooks/useTouchVelocity';
 import { useLayout } from '../hooks/useLayout';
 import ConnectionSection from '../components/settings/ConnectionSection';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Check, Smartphone, MousePointer, Zap, RefreshCw } from 'lucide-react';
-
-import { FreqCurveDisplay } from '../components/controls/FreqCurveDisplay';
-import { getFreqFactor } from '../utils/frequencyWeight';
-import { adaptiveCalibrator } from '../utils/adaptiveCalibrator';
+import { ArrowLeft, Check, RefreshCw } from 'lucide-react';
 
 import { useAudio } from '../hooks/useAudio';
 
@@ -18,54 +12,10 @@ export default function SettingsPage() {
   const settings = useSettingsStore();
   const updateSetting = useSettingsStore((state) => state.updateSetting);
   const { setNumOctaves } = useKeyboardStore();
-  const { deviceCapabilities } = useMidiStore();
-  const { calculateVelocity } = useTouchVelocity();
   const layout = useLayout();
   const { isLoaded: audioLoaded } = useAudio();
 
-  const [testVelocities, setTestVelocities] = useState<{v: number, raw: number, note: number, type: string}[]>([]);
-  const [calibrationProfile, setCalibrationProfile] = useState(adaptiveCalibrator.getProfile());
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-
-  const handleTestPress = (e: React.PointerEvent, note: number) => {
-    e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    
-    // We need a dummy element for calculateVelocity
-    const dummyElement = e.currentTarget as HTMLElement;
-    const finalVelocity = calculateVelocity(e.nativeEvent, dummyElement, note);
-    
-    // Update calibration profile display
-    setCalibrationProfile(adaptiveCalibrator.getProfile());
-    
-    // To get raw velocity, we'd need to re-run parts of the engine or modify it.
-    // For the UI display, let's calculate raw by reversing the freq compensation
-    const factor = getFreqFactor(note);
-    const amount = settings.freqCompensationEnabled ? settings.freqCompensationAmount : 0;
-    const blended = 1.0 + (factor - 1.0) * amount;
-    const rawVelocity = Math.round(finalVelocity / blended);
-    
-    let type = 'Speed';
-    if (e.pointerType === 'touch') {
-      if (e.pressure > 0 && e.pressure !== 0.5) type = 'Pressure';
-      else if (e.width > 1 || e.height > 1) type = 'Area';
-    }
-
-    setTestVelocities(prev => [{v: finalVelocity, raw: rawVelocity, note, type}, ...prev].slice(0, 4));
-  };
-
-  const presets = {
-    precise: { curve: 0.5, min: 0.01, max: 0.8 },
-    natural: { curve: 0.65, min: 0.02, max: 1.2 },
-    expressive: { curve: 0.85, min: 0.05, max: 1.8 },
-  };
-
-  const applyPreset = (name: 'precise' | 'natural' | 'expressive') => {
-    updateSetting('velocityPreset', name);
-    if (name === 'precise') updateSetting('velocitySensitivityPreset', 'heavy');
-    else if (name === 'natural') updateSetting('velocitySensitivityPreset', 'normal');
-    else if (name === 'expressive') updateSetting('velocitySensitivityPreset', 'light');
-  };
 
   const accentColors = [
     { name: 'Teal', value: '#1D9E75' },
@@ -173,41 +123,25 @@ export default function SettingsPage() {
         {/* 2. VELOCITY ENGINE */}
         <section className="bg-[#141414] rounded-2xl border border-[#2e2e2e] p-5 sm:p-8 space-y-8">
           <div className="space-y-2">
-            <h2 className="font-medium tracking-[0.08em] uppercase text-[#666]" style={{ fontSize: 'var(--font-xs)' }}>Velocity Sensitivity</h2>
-            <p className="text-[#444] italic" style={{ fontSize: 'var(--font-xs)' }}>Adjust how much force is needed for loud notes</p>
+            <h2 className="font-medium tracking-[0.08em] uppercase text-[#666]" style={{ fontSize: 'var(--font-xs)' }}>Musical Style</h2>
+            <p className="text-[#444] italic" style={{ fontSize: 'var(--font-xs)' }}>The engine adapts velocity rules to your playing style</p>
           </div>
 
-          <div className="flex bg-[#0A0A0A] p-1.5 rounded-2xl border border-[#2e2e2e]">
-            {(['light', 'normal', 'heavy'] as const).map((p) => (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-[#0A0A0A] p-1.5 rounded-2xl border border-[#2e2e2e]">
+            {(['classical', 'jazz', 'pop', 'free'] as const).map((style) => (
               <button
-                key={p}
-                onClick={() => updateSetting('velocitySensitivityPreset', p)}
-                className={`flex-1 py-3 font-black capitalize rounded-xl transition-all ${settings.velocitySensitivityPreset === p ? 'bg-[#1D9E75] text-black shadow-lg' : 'text-[#666] hover:text-[#f0f0f0]'}`}
+                key={style}
+                onClick={() => updateSetting('musicalStyle', style)}
+                className={`py-3 font-black capitalize rounded-xl transition-all ${settings.musicalStyle === style ? 'bg-[#1D9E75] text-black shadow-lg' : 'text-[#666] hover:text-[#f0f0f0]'}`}
                 style={{ fontSize: 'var(--font-xs)' }}
               >
-                {p}
+                {style}
               </button>
             ))}
           </div>
 
           <div className="space-y-6 pt-4 border-t border-[#2e2e2e]">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-normal text-[#f0f0f0]" style={{ fontSize: 'var(--font-sm)' }}>Personal Calibration</h3>
-                <p className="text-[#666] mt-1" style={{ fontSize: 'var(--font-xs)' }}>
-                  {settings.isCalibrated ? "Calibrated to your touch" : "Not calibrated yet"}
-                </p>
-              </div>
-              <button 
-                onClick={() => updateSetting('isCalibrated', false)}
-                className="px-4 py-2 bg-[#1D9E75]/10 text-[#1D9E75] border border-[#1D9E75]/30 rounded-xl font-black uppercase tracking-widest hover:bg-[#1D9E75] hover:text-white transition-all"
-                style={{ fontSize: 'var(--font-xs)' }}
-              >
-                {settings.isCalibrated ? "Recalibrate" : "Start Wizard"}
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between pt-4 border-t border-[#2e2e2e]">
               <div>
                 <h3 className="font-normal text-[#f0f0f0]" style={{ fontSize: 'var(--font-sm)' }}>Stability Filter</h3>
                 <p className="text-[#666] mt-1" style={{ fontSize: 'var(--font-xs)' }}>Prevents accidental velocity jumps</p>
@@ -249,12 +183,12 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Device Info */}
+          {/* Engine Info */}
           <div className="pt-8 border-t border-[#2e2e2e] space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-[#666] font-bold uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>Input Method</span>
+              <span className="text-[#666] font-bold uppercase tracking-widest" style={{ fontSize: 'var(--font-xs)' }}>Engine Status</span>
               <span className="text-[#1D9E75] font-black uppercase" style={{ fontSize: 'var(--font-xs)' }}>
-                {settings.pressureMode === 'pen' ? "S Pen Pressure" : "Tap Duration"}
+                Music-Aware Active
               </span>
             </div>
           </div>

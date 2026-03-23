@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { DeviceCapabilities } from '../types/midi';
 
 interface MIDIState {
   connectionMode: 'webmidi' | 'usb' | 'wifi' | 'none';
@@ -19,9 +18,6 @@ interface MIDIState {
   usbDeviceName: string | null;
   usbError: string | null;
 
-  // Device capabilities
-  deviceCapabilities: DeviceCapabilities;
-  
   setConnectionMode: (mode: 'webmidi' | 'usb' | 'wifi' | 'none') => void;
   setConnectionStatus: (status: 'connected' | 'no-devices' | 'error' | 'disconnected') => void;
   setMidiOutputs: (outputs: MIDIOutput[]) => void;
@@ -35,7 +31,6 @@ interface MIDIState {
   setUsbStatus: (status: 'disconnected' | 'connecting' | 'connected' | 'error' | 'not_supported') => void;
   setUsbDeviceName: (name: string | null) => void;
   setUsbError: (error: string | null) => void;
-  setDeviceCapabilities: (caps: DeviceCapabilities) => void;
 }
 
 export const useMidiStore = create<MIDIState>((set) => ({
@@ -53,12 +48,6 @@ export const useMidiStore = create<MIDIState>((set) => ({
   usbDeviceName: null,
   usbError: null,
 
-  deviceCapabilities: {
-    pressure: false,
-    contactArea: false,
-    touchInput: false
-  },
-
   setConnectionMode: (mode) => set({ connectionMode: mode }),
   setConnectionStatus: (status) => set({ connectionStatus: status }),
   setMidiOutputs: (outputs) => set({ midiOutputs: outputs }),
@@ -72,5 +61,4 @@ export const useMidiStore = create<MIDIState>((set) => ({
   setUsbStatus: (status) => set({ usbStatus: status }),
   setUsbDeviceName: (name) => set({ usbDeviceName: name }),
   setUsbError: (error) => set({ usbError: error }),
-  setDeviceCapabilities: (caps) => set({ deviceCapabilities: caps }),
 }));

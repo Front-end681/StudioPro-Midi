@@ -15,7 +15,7 @@ interface BlackKeyProps {
 }
 
 export default function BlackKey({ note, isPressed, onPress, onRelease }: BlackKeyProps) {
-  const { calculateVelocity, refineVelocity } = useTouchVelocity();
+  const { calculateVelocity } = useTouchVelocity();
   const layout = useLayout();
 
   return (
@@ -41,13 +41,11 @@ export default function BlackKey({ note, isPressed, onPress, onRelease }: BlackK
       }}
       onPointerUp={(e) => {
         e.stopPropagation();
-        const velocity = refineVelocity(e.nativeEvent, note);
-        onRelease(note, velocity);
+        onRelease(note);
       }}
       onPointerLeave={(e) => {
         if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-          const velocity = refineVelocity(e.nativeEvent, note);
-          onRelease(note, velocity);
+          onRelease(note);
         }
       }}
     />

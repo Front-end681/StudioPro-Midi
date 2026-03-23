@@ -18,14 +18,13 @@ interface WhiteKeyProps {
 }
 
 export default function WhiteKey({ note, isPressed, onPress, onRelease, showLabel }: WhiteKeyProps) {
-  const { freqCompensationEnabled } = useSettingsStore();
   const layout = useLayout();
   const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   const name = noteNames[note % 12];
   const octave = Math.floor(note / 12) - 1;
   const isC = name === 'C';
 
-  const { calculateVelocity, refineVelocity } = useTouchVelocity();
+  const { calculateVelocity } = useTouchVelocity();
 
   const getLabelColor = () => {
     if (isPressed) return "text-black";
@@ -46,13 +45,11 @@ export default function WhiteKey({ note, isPressed, onPress, onRelease, showLabe
         onPress(note, velocity);
       }}
       onPointerUp={(e) => {
-        const velocity = refineVelocity(e.nativeEvent, note);
-        onRelease(note, velocity);
+        onRelease(note);
       }}
       onPointerLeave={(e) => {
         if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-          const velocity = refineVelocity(e.nativeEvent, note);
-          onRelease(note, velocity);
+          onRelease(note);
         }
       }}
     >
